@@ -1,5 +1,8 @@
 ﻿namespace MCBE_ServerWrapper
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public static class ExitCodes
     {
         /// <summary>
