@@ -14,6 +14,8 @@
         /// <param name="args"></param>
         public static void Main(string[] args)
         {
+            PrintTitle();
+
             if (args.Length < 2)
             {
                 if (!Utils.ValidateServerFiles((args.Length == 0) ? string.Empty : args[0]))
@@ -25,11 +27,27 @@
                 var serverProcess = new ServerProcess(args.Length == 0 ? string.Empty : args[1]);
                 serverProcess.Start();
 
-                while (serverProcess.IsRunning)
+                while (true)
                 {
-                    Thread.Sleep(100);
+                    var input = Console.ReadLine();
+
+                    if (input.Equals("stop", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        if (serverProcess.ServerVersion != null)
+                        {
+                            Console.Error.WriteLine(serverProcess.ServerVersion);
+                        }
+                        
+                        serverProcess.Say(input);
+                    }
                 }
 
+                serverProcess.Stop();
+                
                 Environment.Exit(ExitCodes.Ok);
             }
             else
@@ -39,13 +57,17 @@
             }
         }
 
+        private static void PrintTitle()
+        {
+            Console.WriteLine($"----------------------------------------------");
+            Console.WriteLine($"  Minecraft Bedrock Dedicated Server Wrapper  ");
+            Console.WriteLine($"  Version: {Utils.ProgramVersion}");
+            Console.WriteLine($"----------------------------------------------");
+            Console.WriteLine();
+        }
+
         private static void PrintUsage(int exitCode)
         {
-            Console.WriteLine("----------------------------------------------");
-            Console.WriteLine("  Minecraft Bedrock Dedicated Server Wrapper  ");
-            Console.WriteLine("----------------------------------------------");
-            Console.WriteLine();
-
             if (exitCode == ExitCodes.InvalidNumberOfArguments)
             {
                 Console.WriteLine("Usage: start with either:");

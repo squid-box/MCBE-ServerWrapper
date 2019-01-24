@@ -3,6 +3,8 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Text.RegularExpressions;
+    using System.Threading;
 
     /// <summary>
     /// 
@@ -29,6 +31,7 @@
                     FileName = "bedrock_server",
                     WorkingDirectory = serverDirectory,
                     CreateNoWindow = true,
+                    UseShellExecute = false,
                     RedirectStandardError = true,
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true
@@ -40,8 +43,8 @@
                 _serverProcess.StartInfo.EnvironmentVariables.Add("LD_LIBRARY_PATH", ".");
             }
 
-            _serverProcess.OutputDataReceived += _serverProcess_OutputDataReceived;
-            _serverProcess.ErrorDataReceived += ServerProcessOnErrorDataReceived;
+            IpV4Port = -1;
+            IpV6Port = -1;
         }
 
         /// <summary>
@@ -57,6 +60,16 @@
         /// <summary>
         /// 
         /// </summary>
+        public int IpV4Port { get; private set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int IpV6Port { get; private set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public bool IsRunning
         {
             get
@@ -66,7 +79,15 @@
                     return false;
                 }
 
-                return !_serverProcess.HasExited;
+                try
+                {
+                    Process.GetProcessById(_serverProcess.Id);
+                    return true;
+                }
+                catch (ArgumentException)
+                {
+                    return false;
+                }
             }
         }
 
@@ -77,14 +98,53 @@
             Console.ForegroundColor = _defaultConsoleColor;
         }
 
-        private void _serverProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)
+        private void ServerProcessOutputDataReceived(object sender, DataReceivedEventArgs e)
         {
+            if (e == null || e.Data == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(ServerVersion) && e.Data.Contains("Version"))
+            {
+                ServerVersion = Regex.Match(e.Data, @".*Version (\d\.\d\.\d\.\d)").Groups[1].Value;
+                Console.WriteLine($"Server version: {ServerVersion}");
+                return;
+            }
+
+            if (e.Data.Contains("IPv4 supported") && IpV4Port == -1)
+            {
+                IpV4Port = Convert.ToInt32(Regex.Match(e.Data, @".*port: (\d*)").Groups[1].Value);
+                Console.WriteLine($"Server IPv4 port: {IpV4Port}");
+                return;
+            }
+
+            if (e.Data.Contains("IPv6 supported") && IpV6Port == -1)
+            {
+                IpV6Port = Convert.ToInt32(Regex.Match(e.Data, @".*port: (\d*)").Groups[1].Value);
+                Console.WriteLine($"Server IPv6 port: {IpV6Port}");
+                return;
+            }
+
             Console.WriteLine(e.Data);
         }
 
         private void SendInputToProcess(string input)
         {
-            _serverProcess.StandardInput.WriteLine(input);
+            if (IsRunning)
+            {
+                _serverProcess.StandardInput.WriteLine(input);
+                _serverProcess.StandardInput.Flush();
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
+        public void Say(string message)
+        {
+            SendInputToProcess($"say {message}");
         }
 
         /// <summary>
@@ -93,6 +153,17 @@
         public void Start()
         {
             _serverProcess.Start();
+
+            while (!IsRunning)
+            {
+                Thread.Sleep(100);
+            }
+
+            _serverProcess.OutputDataReceived += ServerProcessOutputDataReceived;
+            _serverProcess.ErrorDataReceived += ServerProcessOnErrorDataReceived;
+
+            _serverProcess.BeginOutputReadLine();
+            _serverProcess.BeginErrorReadLine();
         }
 
         /// <summary>
@@ -101,6 +172,20 @@
         public void Stop()
         {
             SendInputToProcess("stop");
+            Console.WriteLine("Shutting down server...");
+
+            _serverProcess.WaitForExit(5000);
+
+            if (!_serverProcess.HasExited)
+            {
+                Console.Error.WriteLine("Could not exit server process. Killing.");
+                _serverProcess.Kill();
+            }
+
+            _serverProcess.CancelOutputRead();
+            _serverProcess.CancelErrorRead();
+            _serverProcess.OutputDataReceived -= ServerProcessOutputDataReceived;
+            _serverProcess.ErrorDataReceived -= ServerProcessOnErrorDataReceived;
         }
 
         /// <summary>

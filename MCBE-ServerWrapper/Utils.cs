@@ -2,7 +2,9 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
+    using System.Reflection;
 
     /// <summary>
     /// General utilities.
@@ -49,5 +51,10 @@
 
             return true;
         }
+
+        /// <summary>
+        /// Gets the version of this program.
+        /// </summary>
+        public static string ProgramVersion => FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
     }
 }
