@@ -37,7 +37,6 @@
             }
             else
             {
-                // TODO: Double check this.
                 requiredFiles.Add("bedrock_server.exe");
             }
 

@@ -12,7 +12,7 @@
     public class ServerProcess
     {
         private readonly Process _serverProcess;
-        private readonly ConsoleColor _defaultConsoleColor;
+        private readonly InputOutputManager _inputOutputManager;
 
         /// <summary>
         /// 
@@ -21,51 +21,45 @@
         public ServerProcess(string serverDirectory)
         {
             ServerDirectory = serverDirectory;
-
-            _defaultConsoleColor = Console.ForegroundColor;
+            ServerValues = new Dictionary<string, string>();
 
             _serverProcess = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "bedrock_server",
                     WorkingDirectory = serverDirectory,
                     CreateNoWindow = true,
                     UseShellExecute = false,
                     RedirectStandardError = true,
                     RedirectStandardInput = true,
-                    RedirectStandardOutput = true
+                    RedirectStandardOutput = true,
                 }
             };
 
             if (Utils.IsLinux())
             {
+                _serverProcess.StartInfo.FileName = "bedrock_server";
                 _serverProcess.StartInfo.EnvironmentVariables.Add("LD_LIBRARY_PATH", ".");
             }
+            else
+            {
+                _serverProcess.StartInfo.FileName = "bedrock_server.exe";
+            }
 
-            IpV4Port = -1;
-            IpV6Port = -1;
+            _serverProcess.StandardInput.AutoFlush = true;
+
+            _inputOutputManager = new InputOutputManager(this);
         }
+
+        /// <summary>
+        /// Contains any properties and values related to the server.
+        /// </summary>
+        public Dictionary<string, string> ServerValues { get; }
 
         /// <summary>
         /// 
         /// </summary>
         public string ServerDirectory { get; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public string ServerVersion { get; private set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public int IpV4Port { get; private set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public int IpV6Port { get; private set; }
 
         /// <summary>
         /// 
@@ -91,50 +85,15 @@
             }
         }
 
-        private void ServerProcessOnErrorDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.WriteLine(e.Data);
-            Console.ForegroundColor = _defaultConsoleColor;
-        }
-
-        private void ServerProcessOutputDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            if (e == null || e.Data == null)
-            {
-                return;
-            }
-
-            if (string.IsNullOrEmpty(ServerVersion) && e.Data.Contains("Version"))
-            {
-                ServerVersion = Regex.Match(e.Data, @".*Version (\d\.\d\.\d\.\d)").Groups[1].Value;
-                Console.WriteLine($"Server version: {ServerVersion}");
-                return;
-            }
-
-            if (e.Data.Contains("IPv4 supported") && IpV4Port == -1)
-            {
-                IpV4Port = Convert.ToInt32(Regex.Match(e.Data, @".*port: (\d*)").Groups[1].Value);
-                Console.WriteLine($"Server IPv4 port: {IpV4Port}");
-                return;
-            }
-
-            if (e.Data.Contains("IPv6 supported") && IpV6Port == -1)
-            {
-                IpV6Port = Convert.ToInt32(Regex.Match(e.Data, @".*port: (\d*)").Groups[1].Value);
-                Console.WriteLine($"Server IPv6 port: {IpV6Port}");
-                return;
-            }
-
-            Console.WriteLine(e.Data);
-        }
-
-        private void SendInputToProcess(string input)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="input"></param>
+        public void SendInputToProcess(string input)
         {
             if (IsRunning)
             {
                 _serverProcess.StandardInput.WriteLine(input);
-                _serverProcess.StandardInput.Flush();
             }
         }
 
@@ -159,8 +118,8 @@
                 Thread.Sleep(100);
             }
 
-            _serverProcess.OutputDataReceived += ServerProcessOutputDataReceived;
-            _serverProcess.ErrorDataReceived += ServerProcessOnErrorDataReceived;
+            _serverProcess.OutputDataReceived += _inputOutputManager.ReceivedStandardOutput;
+            _serverProcess.ErrorDataReceived += _inputOutputManager.ReceivedErrorOutput;
 
             _serverProcess.BeginOutputReadLine();
             _serverProcess.BeginErrorReadLine();
@@ -184,8 +143,8 @@
 
             _serverProcess.CancelOutputRead();
             _serverProcess.CancelErrorRead();
-            _serverProcess.OutputDataReceived -= ServerProcessOutputDataReceived;
-            _serverProcess.ErrorDataReceived -= ServerProcessOnErrorDataReceived;
+            _serverProcess.OutputDataReceived -= _inputOutputManager.ReceivedStandardOutput;
+            _serverProcess.ErrorDataReceived -= _inputOutputManager.ReceivedErrorOutput;
         }
 
         /// <summary>

@@ -1,7 +1,6 @@
 ﻿namespace MCBE_ServerWrapper
 {
     using System;
-    using System.Threading;
 
     /// <summary>
     /// 
@@ -37,11 +36,6 @@
                     }
                     else
                     {
-                        if (serverProcess.ServerVersion != null)
-                        {
-                            Console.Error.WriteLine(serverProcess.ServerVersion);
-                        }
-                        
                         serverProcess.Say(input);
                     }
                 }
