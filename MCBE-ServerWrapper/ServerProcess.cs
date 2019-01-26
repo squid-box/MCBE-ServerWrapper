@@ -46,8 +46,6 @@
                 _serverProcess.StartInfo.FileName = "bedrock_server.exe";
             }
 
-            _serverProcess.StandardInput.AutoFlush = true;
-
             _inputOutputManager = new InputOutputManager(this);
         }
 
@@ -123,6 +121,7 @@
 
             _serverProcess.BeginOutputReadLine();
             _serverProcess.BeginErrorReadLine();
+            _serverProcess.StandardInput.AutoFlush = true;
         }
 
         /// <summary>
