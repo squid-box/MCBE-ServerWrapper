@@ -36,7 +36,7 @@
                     }
                     else
                     {
-                        serverProcess.Say(input);
+                        serverProcess.SendInputToProcess(input);
                     }
                 }
 

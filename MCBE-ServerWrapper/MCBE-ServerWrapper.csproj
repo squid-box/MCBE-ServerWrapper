@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BackupManager.cs" />
     <Compile Include="ExitCodes.cs" />
     <Compile Include="InputOutputManager.cs" />
     <Compile Include="Program.cs" />
