@@ -48,7 +48,7 @@
                 }
                 else
                 {
-                    Console.WriteLine($"Server started in {(DateTime.Now - _serverStarting).TotalSeconds} seconds.");
+                    Console.WriteLine($"Server started in {(DateTime.Now - _serverStarting).TotalMilliseconds} ms.");
                 }
 
                 return;
@@ -68,6 +68,33 @@
                 var playerName = Regex.Match(e.Data, $".* Player disconnected: (.*), ").Groups[1].Value;
                 Console.WriteLine($"Player \"{playerName}\" disconnected.");
                 _serverProcess.Say($"Goodbye {playerName}!");
+
+                return;
+            }
+
+            if (e.Data.Contains("Difficulty: ") && !_serverProcess.ServerValues.ContainsKey("Difficulty"))
+            {
+                var difficulty = Regex.Match(e.Data, @".*Difficulty: \d (.*)").Groups[1].Value;
+                _serverProcess.ServerValues.Add("Difficulty", difficulty);
+                Console.WriteLine($"Difficulty: {difficulty}.");
+
+                return;
+            }
+
+            if (e.Data.Contains("Game mode: ") && !_serverProcess.ServerValues.ContainsKey("GameMode"))
+            {
+                var gameMode = Regex.Match(e.Data, @".*Game mode: \d (.*)").Groups[1].Value;
+                _serverProcess.ServerValues.Add("GameMode", gameMode);
+                Console.WriteLine($"Game mode: {gameMode}.");
+
+                return;
+            }
+
+            if (e.Data.Contains("Level Name: ") && !_serverProcess.ServerValues.ContainsKey("LevelName"))
+            {
+                var levelName = Regex.Match(e.Data, @".*Level Name: (.*)").Groups[1].Value;
+                _serverProcess.ServerValues.Add("LevelName", levelName);
+                Console.WriteLine($"Level name: {levelName}.");
 
                 return;
             }
