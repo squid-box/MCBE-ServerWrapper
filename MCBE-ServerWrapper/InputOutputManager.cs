@@ -67,8 +67,6 @@
                     }
                 });
                 thread.Start();
-
-                return;
             }
 
             if (e.Data.Contains("Player disconnected"))
