@@ -5,12 +5,15 @@
     using System.Text.RegularExpressions;
     using System.Threading;
 
+    using PlayerManagement;
+
     /// <summary>
     /// 
     /// </summary>
     public class InputOutputManager
     {
         private readonly ServerProcess _serverProcess;
+        private readonly PlayerManager _playerManager;
         private readonly ConsoleColor _defaultConsoleColor;
 
         private DateTime _serverStarting;
@@ -18,13 +21,9 @@
         public InputOutputManager(ServerProcess serverProcess)
         {
             _serverProcess = serverProcess;
+            _playerManager = new PlayerManager();
             _serverStarting = DateTime.MinValue;
             _defaultConsoleColor = Console.ForegroundColor;
-        }
-
-        public void ParseInput(string input)
-        {
-
         }
 
         public void ReceivedStandardOutput(object sender, DataReceivedEventArgs e)
@@ -50,21 +49,34 @@
 
             if (e.Data.Contains("Player connected"))
             {
-                var playerName = Regex.Match(e.Data, @".* Player connected: (.*), ").Groups[1].Value;
+                var playerData = Regex.Match(e.Data, @".* Player connected: (.*), xuid: (.*)");
+                var player = new Player(playerData.Groups[1].Value, playerData.Groups[2].Value);
+                _playerManager.PlayerLoggedIn(player);
+                var timePlayed = _playerManager.GetPlayedMinutes(player);
 
                 var thread = new Thread(() =>
                 {
                     Thread.Sleep(5000);
-                    _serverProcess.Say($"Welcome {playerName}!");
-
+                    if (timePlayed == -1)
+                    {
+                        _serverProcess.Say($"Welcome {player.Name}!");
+                    }
+                    else
+                    {
+                        _serverProcess.Say($"Welcome back {player.Name}, you've played {timePlayed} minues so far.");
+                    }
                 });
                 thread.Start();
+
+                return;
             }
 
             if (e.Data.Contains("Player disconnected"))
             {
-                var playerName = Regex.Match(e.Data, @".* Player disconnected: (.*), ").Groups[1].Value;
-                _serverProcess.Say($"Goodbye {playerName}!");
+                var playerData = Regex.Match(e.Data, @".* Player disconnected: (.*), xuid: (.*)");
+                var player = new Player(playerData.Groups[1].Value, playerData.Groups[2].Value);
+                _playerManager.PlayerLoggedOut(player);
+                _serverProcess.Say($"Goodbye {player.Name}!");
             }
 
             if (e.Data.Contains("Difficulty: ") && !_serverProcess.ServerValues.ContainsKey("Difficulty"))
