@@ -59,11 +59,11 @@
                     Thread.Sleep(5000);
                     if (timePlayed == -1)
                     {
-                        _serverProcess.Say($"Welcome {player.Name}!");
+                        _serverProcess.Say($"Welcome {player}!");
                     }
                     else
                     {
-                        _serverProcess.Say($"Welcome back {player.Name}, you've played {timePlayed} minues so far.");
+                        _serverProcess.Say($"Welcome back {player}, you've played {timePlayed} minutes so far.");
                     }
                 });
                 thread.Start();
@@ -76,7 +76,7 @@
                 var playerData = Regex.Match(e.Data, @".* Player disconnected: (.*), xuid: (.*)");
                 var player = new Player(playerData.Groups[1].Value, playerData.Groups[2].Value);
                 _playerManager.PlayerLoggedOut(player);
-                _serverProcess.Say($"Goodbye {player.Name}!");
+                _serverProcess.Say($"Goodbye {player}!");
             }
 
             if (e.Data.Contains("Difficulty: ") && !_serverProcess.ServerValues.ContainsKey("Difficulty"))

@@ -72,6 +72,7 @@
             }
 
             _timeLog[player] += Convert.ToInt32(Math.Ceiling((DateTime.UtcNow - _online[player]).TotalMinutes));
+            _online.Remove(player);
         }
 
         private Dictionary<Player, int> LoadTimeLog()

@@ -50,5 +50,14 @@
             var other = (Player)obj;
             return Name.Equals(other.Name) && Xuid.Equals(other.Xuid);
         }
+
+        /// <summary>
+        /// Gets a string representation of this <see cref="Player"/>.
+        /// </summary>
+        /// <returns>The name of this player.</returns>
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }
