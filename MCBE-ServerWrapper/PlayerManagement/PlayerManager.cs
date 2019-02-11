@@ -1,4 +1,4 @@
-﻿namespace MCBE_ServerWrapper.PlayerManagement
+﻿namespace BedrockServerWrapper.PlayerManagement
 {
     using System;
     using System.Collections.Generic;

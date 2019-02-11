@@ -1,4 +1,4 @@
-﻿namespace MCBE_ServerWrapper.PlayerManagement
+﻿namespace BedrockServerWrapper.PlayerManagement
 {
     /// <summary>
     /// Represents a player on the server.

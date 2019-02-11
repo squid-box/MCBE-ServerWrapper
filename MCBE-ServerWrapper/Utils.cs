@@ -1,4 +1,4 @@
-﻿namespace MCBE_ServerWrapper
+﻿namespace BedrockServerWrapper
 {
     using System;
     using System.Collections.Generic;
