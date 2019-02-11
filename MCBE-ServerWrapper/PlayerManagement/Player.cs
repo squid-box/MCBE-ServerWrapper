@@ -59,5 +59,27 @@
         {
             return Name;
         }
+
+        /// <summary>
+        /// Determines whether or not two <see cref="Player"/>s are equal.
+        /// </summary>
+        /// <param name="player1">First <see cref="Player"/>.</param>
+        /// <param name="player2">Second <see cref="Player"/>.</param>
+        /// <returns>True if <see cref="Player"/>s are equal, otherwise false.</returns>
+        public static bool operator ==(Player player1, Player player2)
+        {
+            return player1.Equals(player2);
+        }
+
+        /// <summary>
+        /// Determines whether or not two <see cref="Player"/>s are not equal.
+        /// </summary>
+        /// <param name="player1">First <see cref="Player"/>.</param>
+        /// <param name="player2">Second <see cref="Player"/>.</param>
+        /// <returns>True if <see cref="Player"/>s are inequal, otherwise false.</returns>
+        public static bool operator !=(Player player1, Player player2)
+        {
+            return !player1.Equals(player2);
+        }
     }
 }

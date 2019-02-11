@@ -16,6 +16,11 @@
         
         }
 
+        public void Start()
+        {
+
+        }
+
         private static void CopyFile(string source, string destination, int bytesToRead)
         {
             var buffer = new byte[bytesToRead];
