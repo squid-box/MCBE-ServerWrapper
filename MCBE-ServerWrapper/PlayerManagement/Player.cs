@@ -3,7 +3,7 @@
     /// <summary>
     /// Represents a player on the server.
     /// </summary>
-    public struct Player
+    public class Player
     {
         /// <summary>
         /// Creeates a new <see cref="Player"/>.
