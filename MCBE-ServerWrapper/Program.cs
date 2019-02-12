@@ -15,6 +15,8 @@
         {
             PrintTitle();
 
+            Console.ReadLine();
+
             if (args.Length < 2)
             {
                 if (!Utils.ValidateServerFiles((args.Length == 0) ? string.Empty : args[0]))

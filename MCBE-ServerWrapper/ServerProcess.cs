@@ -50,7 +50,8 @@
 
             _inputOutputManager = new InputOutputManager(this);
             _backupManager = new BackupManager(this);
-            _inputOutputManager.BackupReady += _backupManager.BackupReady;
+            _inputOutputManager.BackupReady += _backupManager.ManualBackup;
+            _inputOutputManager.PlayerJoined += _backupManager.PlayerJoined;
         }
 
         /// <summary>

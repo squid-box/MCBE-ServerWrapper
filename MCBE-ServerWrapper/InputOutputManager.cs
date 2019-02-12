@@ -1,12 +1,11 @@
-﻿using BedrockServerWrapper.Backups;
-
-namespace BedrockServerWrapper
+﻿namespace BedrockServerWrapper
 {
     using System;
     using System.Diagnostics;
     using System.Text.RegularExpressions;
     using System.Threading;
 
+    using Backups;
     using PlayerManagement;
 
     /// <summary>
@@ -17,8 +16,7 @@ namespace BedrockServerWrapper
         private readonly ServerProcess _serverProcess;
         private readonly PlayerManager _playerManager;
         private readonly ConsoleColor _defaultConsoleColor;
-
-        private CancellationTokenSource _cancellationTokenSource;
+        private readonly CancellationTokenSource _cancellationTokenSource;
 
         private DateTime _serverStarting;
 
@@ -100,7 +98,7 @@ namespace BedrockServerWrapper
             if (e.Data.Contains("level.dat"))
             {
                 _cancellationTokenSource.Cancel();
-                BackupReady?.Invoke(this, new BackupReadyArguments(e.Data));
+                BackupReady?.Invoke(this, new BackupReadyArguments(e.Data, _playerManager.UsersOnline > 0));
                 return;
             }
 

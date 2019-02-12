@@ -3,25 +3,52 @@
     using System;
     using System.IO;
 
+    using PlayerManagement;
+
     public class BackupManager
     {
         private readonly ServerProcess _serverProcess;
 
+        private bool _hasUserBeenOnlineSinceLastBackup;
+
         public BackupManager(ServerProcess serverProcess)
         {
             _serverProcess = serverProcess;
+            _hasUserBeenOnlineSinceLastBackup = false;
         }
 
         public static string BackupFolder => @"Backups";
 
-        public void BackupReady(object sender, BackupReadyArguments arguments)
+        public void PlayerJoined(object sender, PlayerConnectionEventArgs args)
+        {
+            _hasUserBeenOnlineSinceLastBackup = true;
+        }
+
+        public void RunScheduledBackup(string arguments)
+        {
+            if (_hasUserBeenOnlineSinceLastBackup)
+            {
+                Backup(arguments);
+            }
+            else
+            {
+                Console.Out.WriteLine("Skipped scheduled backup, no users have been online.");
+            }
+        }
+
+        public void ManualBackup(object sender, BackupReadyArguments arguments)
+        {
+            Backup(arguments.BackupArguments);
+        }
+
+        private void Backup(string arguments)
         {
             var tmpFolder = Path.Combine(BackupFolder, "tmp");
             Directory.CreateDirectory(tmpFolder);
 
             Console.Out.WriteLine("Copying files...");
 
-            foreach (var file in arguments.BackupArguments.Split(','))
+            foreach (var file in arguments.Split(','))
             {
                 var fileTmp = file.Trim().Split(':');
                 var fileName = Path.Combine("worlds", fileTmp[0]);
@@ -51,6 +78,13 @@
             }
 
             File.WriteAllBytes(destination, buffer);
+        }
+
+        private static string GetBackupFileName()
+        {
+            var now = DateTime.Now;
+
+            return $"backup_{now.Year:0000}{now.Month:00}{now.Day:00}-{now.Hour:00}{now.Minute:00}{now.Second:00}.zip";
         }
     }
 }

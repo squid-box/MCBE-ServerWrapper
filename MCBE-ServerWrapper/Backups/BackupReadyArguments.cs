@@ -11,14 +11,21 @@
         /// 
         /// </summary>
         /// <param name="backupInfo"></param>
-        public BackupReadyArguments(string backupInfo)
+        /// <param name="anyUserOnline"></param>
+        public BackupReadyArguments(string backupInfo, bool anyUserOnline)
         {
             BackupArguments = backupInfo;
+            AnyUserOnline = anyUserOnline;
         }
 
         /// <summary>
         /// 
         /// </summary>
         public string BackupArguments { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool AnyUserOnline { get; }
     }
 }

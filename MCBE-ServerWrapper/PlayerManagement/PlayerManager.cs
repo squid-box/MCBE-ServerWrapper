@@ -81,6 +81,11 @@
             SaveTimeLog();
         }
 
+        /// <summary>
+        /// Gets the number of currently online users.
+        /// </summary>
+        public int UsersOnline => _online.Count;
+
         private Dictionary<string, int> LoadTimeLog()
         {
             if (File.Exists(PlayerLogFile))
