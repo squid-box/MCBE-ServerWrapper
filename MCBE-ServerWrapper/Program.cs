@@ -34,6 +34,10 @@
                     {
                         break;
                     }
+                    else if (input.Equals("backup", StringComparison.OrdinalIgnoreCase))
+                    {
+                        serverProcess.SendInputToProcess("save hold");
+                    }
                     else
                     {
                         serverProcess.SendInputToProcess(input);

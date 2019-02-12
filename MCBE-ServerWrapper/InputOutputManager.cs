@@ -1,4 +1,6 @@
-﻿namespace BedrockServerWrapper
+﻿using BedrockServerWrapper.Backups;
+
+namespace BedrockServerWrapper
 {
     using System;
     using System.Diagnostics;
@@ -16,7 +18,28 @@
         private readonly PlayerManager _playerManager;
         private readonly ConsoleColor _defaultConsoleColor;
 
+        private CancellationTokenSource _cancellationTokenSource;
+
         private DateTime _serverStarting;
+
+        #region Events
+        
+        /// <summary>
+        /// Invoked when a backup is ready to be copied.
+        /// </summary>
+        public event EventHandler<BackupReadyArguments> BackupReady;
+
+        /// <summary>
+        /// Invoked when a backup is complete.
+        /// </summary>
+        public event EventHandler BackupComplete;
+
+
+        public event EventHandler<PlayerConnectionEventArgs> PlayerJoined;
+
+        public event EventHandler<PlayerConnectionEventArgs> PlayerDisconnected;
+
+        #endregion
 
         public InputOutputManager(ServerProcess serverProcess)
         {
@@ -24,6 +47,10 @@
             _playerManager = new PlayerManager();
             _serverStarting = DateTime.MinValue;
             _defaultConsoleColor = Console.ForegroundColor;
+            _cancellationTokenSource = new CancellationTokenSource();
+
+            PlayerJoined += _playerManager.PlayerConnected;
+            PlayerDisconnected += _playerManager.PlayerDisconnected;
         }
 
         public void ReceivedStandardOutput(object sender, DataReceivedEventArgs e)
@@ -47,24 +74,60 @@
                 }
             }
 
+            if (e.Data.Contains("Saving..."))
+            {
+                Console.WriteLine("Backup started...");
+                _serverProcess.Say("Backup started.");
+
+                BackupReady += (s, a) =>
+                {
+                    _cancellationTokenSource.Cancel();    
+                };
+
+                var thread = new Thread(() =>
+                {
+                    while (!_cancellationTokenSource.IsCancellationRequested)
+                    {
+                        _serverProcess.SendInputToProcess("save query");
+                        Thread.Sleep(1000);
+                    }
+                });
+                thread.Start();
+
+                return;
+            }
+            
+            if (e.Data.Contains("level.dat"))
+            {
+                _cancellationTokenSource.Cancel();
+                BackupReady?.Invoke(this, new BackupReadyArguments(e.Data));
+                return;
+            }
+
+            if (e.Data.Contains("Changes to the level are resumed."))
+            {
+                Console.Out.WriteLine("Backup completed.");
+                _serverProcess.Say("Backup completed.");
+                _cancellationTokenSource.Cancel();
+                BackupComplete?.Invoke(this, null);
+                return;
+            }
+
             if (e.Data.Contains("Player connected"))
             {
                 var playerData = Regex.Match(e.Data, @".* Player connected: (.*), xuid: (.*)");
                 var player = new Player(playerData.Groups[1].Value, playerData.Groups[2].Value);
-                _playerManager.PlayerLoggedIn(player);
+                PlayerJoined?.Invoke(this, new PlayerConnectionEventArgs(player));
+                
                 var timePlayed = _playerManager.GetPlayedMinutes(player);
 
                 var thread = new Thread(() =>
                 {
                     Thread.Sleep(5000);
-                    if (timePlayed == -1)
-                    {
-                        _serverProcess.Say($"Welcome {player}!");
-                    }
-                    else
-                    {
-                        _serverProcess.Say($"Welcome back {player}, you've played {timePlayed} minutes so far.");
-                    }
+
+                    _serverProcess.Say(timePlayed == -1
+                        ? $"Welcome {player}!"
+                        : $"Welcome back {player}, you've played {timePlayed} minutes so far.");
                 });
                 thread.Start();
             }
@@ -73,7 +136,8 @@
             {
                 var playerData = Regex.Match(e.Data, @".* Player disconnected: (.*), xuid: (.*)");
                 var player = new Player(playerData.Groups[1].Value, playerData.Groups[2].Value);
-                _playerManager.PlayerLoggedOut(player);
+                PlayerDisconnected?.Invoke(this, new PlayerConnectionEventArgs(player));
+                
                 _serverProcess.Say($"Goodbye {player}!");
             }
 

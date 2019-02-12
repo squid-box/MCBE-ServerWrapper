@@ -3,8 +3,9 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
-    using System.Text.RegularExpressions;
     using System.Threading;
+
+    using Backups;
 
     /// <summary>
     /// 
@@ -13,6 +14,7 @@
     {
         private readonly Process _serverProcess;
         private readonly InputOutputManager _inputOutputManager;
+        private readonly BackupManager _backupManager;
 
         /// <summary>
         /// 
@@ -47,6 +49,8 @@
             }
 
             _inputOutputManager = new InputOutputManager(this);
+            _backupManager = new BackupManager(this);
+            _inputOutputManager.BackupReady += _backupManager.BackupReady;
         }
 
         /// <summary>

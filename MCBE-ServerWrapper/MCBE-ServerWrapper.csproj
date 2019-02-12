@@ -56,10 +56,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BackupManager.cs" />
+    <Compile Include="Backups\BackupManager.cs" />
+    <Compile Include="Backups\BackupReadyArguments.cs" />
     <Compile Include="ExitCodes.cs" />
     <Compile Include="InputOutputManager.cs" />
     <Compile Include="PlayerManagement\Player.cs" />
+    <Compile Include="PlayerManagement\PlayerConnectionEventArgs.cs" />
     <Compile Include="PlayerManagement\PlayerManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

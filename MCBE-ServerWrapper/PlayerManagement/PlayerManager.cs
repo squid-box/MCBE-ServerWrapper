@@ -32,16 +32,15 @@
         /// <summary>
         /// Called when a <see cref="Player"/> logs in.
         /// </summary>
-        /// <param name="player"><see cref="Player"/> that has logged in.</param>
-        public void PlayerLoggedIn(Player player)
+        public void PlayerConnected(object sender, PlayerConnectionEventArgs args)
         {
-            if (_online.ContainsKey(player))
+            if (_online.ContainsKey(args.Player))
             {
-                Console.Error.WriteLine($"Player \"{player}\" already logged in!");
-                _online.Remove(player);
+                Console.Error.WriteLine($"Player \"{args.Player}\" already logged in!");
+                _online.Remove(args.Player);
             }
 
-            _online.Add(player, DateTime.UtcNow);
+            _online.Add(args.Player, DateTime.UtcNow);
         }
 
         /// <summary>
@@ -63,21 +62,21 @@
         /// Called when a <see cref="Player"/> logs out.
         /// </summary>
         /// <param name="player"><see cref="Player"/> that logs out.</param>
-        public void PlayerLoggedOut(Player player)
+        public void PlayerDisconnected(object sender, PlayerConnectionEventArgs args)
         {
-            if (!_online.ContainsKey(player))
+            if (!_online.ContainsKey(args.Player))
             {
-                Console.Error.WriteLine($"Player \"{player}\" was not logged in!");
+                Console.Error.WriteLine($"Player \"{args.Player}\" was not logged in!");
                 return;
             }
 
-            if (!_timeLog.ContainsKey(player.Name))
+            if (!_timeLog.ContainsKey(args.Player.Name))
             {
-                _timeLog.Add(player.Name, 0);
+                _timeLog.Add(args.Player.Name, 0);
             }
 
-            _timeLog[player.Name] += Convert.ToInt32(Math.Ceiling((DateTime.UtcNow - _online[player]).TotalMinutes));
-            _online.Remove(player);
+            _timeLog[args.Player.Name] += Convert.ToInt32(Math.Ceiling((DateTime.UtcNow - _online[args.Player]).TotalMinutes));
+            _online.Remove(args.Player);
 
             SaveTimeLog();
         }

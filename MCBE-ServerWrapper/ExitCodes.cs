@@ -19,5 +19,10 @@
         /// 
         /// </summary>
         public static int InvalidServerFiles => 2;
+
+        /// <summary>
+        /// Unhandled exception.
+        /// </summary>
+        public static int UnknownCrash => 3;
     }
 }
