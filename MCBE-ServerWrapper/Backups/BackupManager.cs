@@ -8,13 +8,10 @@
 
     public class BackupManager
     {
-        private readonly ServerProcess _serverProcess;
-
         private bool _hasUserBeenOnlineSinceLastBackup;
 
-        public BackupManager(ServerProcess serverProcess)
+        public BackupManager()
         {
-            _serverProcess = serverProcess;
             _hasUserBeenOnlineSinceLastBackup = false;
         }
 

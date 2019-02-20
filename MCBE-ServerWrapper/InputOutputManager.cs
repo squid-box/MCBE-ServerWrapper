@@ -114,7 +114,7 @@
 
                     _serverProcess.Say(timePlayed == -1
                         ? $"Welcome {player}!"
-                        : $"Welcome back {player}, you've played {timePlayed} minutes so far.");
+                        : $"Welcome back {player}, you've played {Utils.TimePlayedConversion(timePlayed)} so far.");
                 });
                 thread.Start();
             }

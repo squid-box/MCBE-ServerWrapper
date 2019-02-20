@@ -51,6 +51,13 @@
             return true;
         }
 
+        public static string TimePlayedConversion(int minutes)
+        {
+            var timespan = TimeSpan.FromMinutes(minutes);
+
+            return $"{Math.Floor(timespan.TotalHours):00.}h {timespan.Minutes:00}m ({minutes} total minutes).";
+        }
+
         /// <summary>
         /// Gets the version of this program.
         /// </summary>
