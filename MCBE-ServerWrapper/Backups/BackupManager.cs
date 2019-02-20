@@ -91,6 +91,15 @@
         {
             var buffer = new byte[bytesToRead];
 
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(destination));
+            }
+            catch (ArgumentException)
+            {
+                // There's no directory in destination path, so nothing to create here.
+            }
+
             using (var reader = new BinaryReader(new FileStream(source, FileMode.Open)))
             {
                 reader.Read(buffer, 0, bytesToRead);
