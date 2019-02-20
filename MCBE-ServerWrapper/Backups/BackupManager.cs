@@ -60,7 +60,7 @@
                 var fileSize = Convert.ToInt32(fileTmp[1]);
 
                 Console.Out.WriteLine($" - Copying {fileName}...");
-                CopyFile(fileName, Path.Combine(tmpDir, Path.GetFileName(fileName)), fileSize);
+                CopyFile(fileName, Path.Combine(tmpDir, fileName), fileSize);
             }
 
             Console.Out.WriteLine("Compressing backup...");
