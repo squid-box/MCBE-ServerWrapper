@@ -2,6 +2,7 @@
 {
     using System;
     using System.Diagnostics;
+    using System.IO;
     using System.Text.RegularExpressions;
     using System.Threading;
 
@@ -26,12 +27,6 @@
         /// Invoked when a backup is ready to be copied.
         /// </summary>
         public event EventHandler<BackupReadyArguments> BackupReady;
-
-        /// <summary>
-        /// Invoked when a backup is complete.
-        /// </summary>
-        public event EventHandler BackupComplete;
-
 
         public event EventHandler<PlayerConnectionEventArgs> PlayerJoined;
 
@@ -102,15 +97,6 @@
                 return;
             }
 
-            if (e.Data.Contains("Changes to the level are resumed."))
-            {
-                Console.Out.WriteLine("Backup completed.");
-                _serverProcess.Say("Backup completed.");
-                _cancellationTokenSource.Cancel();
-                BackupComplete?.Invoke(this, null);
-                return;
-            }
-
             if (e.Data.Contains("Player connected"))
             {
                 var playerData = Regex.Match(e.Data, @".* Player connected: (.*), xuid: (.*)");
@@ -177,6 +163,12 @@
             Console.ForegroundColor = ConsoleColor.DarkRed;
             Console.WriteLine(e.Data);
             Console.ForegroundColor = _defaultConsoleColor;
+        }
+
+        public void BackupCompleted(object sender, BackupCompletedArguments args)
+        {
+            _serverProcess.SendInputToProcess("save resume");
+            _serverProcess.Say($"Backup completed, {Path.GetFileName(args.BackupFile)} ({new FileInfo(args.BackupFile).Length/1024/1024}MB), completed in {args.BackupDuration}.");
         }
     }
 }

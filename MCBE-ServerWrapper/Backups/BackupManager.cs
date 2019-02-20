@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using System.IO.Compression;
 
     using PlayerManagement;
 
@@ -17,6 +18,8 @@
             _hasUserBeenOnlineSinceLastBackup = false;
         }
 
+        public event EventHandler<BackupCompletedArguments> BackupCompleted;
+
         public static string BackupFolder => @"Backups";
 
         public void PlayerJoined(object sender, PlayerConnectionEventArgs args)
@@ -28,7 +31,7 @@
         {
             if (_hasUserBeenOnlineSinceLastBackup)
             {
-                Backup(arguments);
+                Backup(arguments, false);
             }
             else
             {
@@ -38,13 +41,18 @@
 
         public void ManualBackup(object sender, BackupReadyArguments arguments)
         {
-            Backup(arguments.BackupArguments);
+            Backup(arguments.BackupArguments, true);
         }
 
-        private void Backup(string arguments)
+        private void Backup(string arguments, bool manual)
         {
-            var tmpFolder = Path.Combine(BackupFolder, "tmp");
-            Directory.CreateDirectory(tmpFolder);
+            var start = DateTime.Now;
+            var tmpDir = Path.Combine(BackupFolder, "tmp");
+            if (Directory.Exists(tmpDir))
+            {
+                DeleteDirectory(tmpDir);
+            }
+            Directory.CreateDirectory(tmpDir);
 
             Console.Out.WriteLine("Copying files...");
 
@@ -55,17 +63,31 @@
                 var fileSize = Convert.ToInt32(fileTmp[1]);
 
                 Console.Out.WriteLine($" - Copying {fileName}...");
-                CopyFile(fileName, Path.Combine(tmpFolder, Path.GetFileName(fileName)), fileSize);
+                CopyFile(fileName, Path.Combine(tmpDir, Path.GetFileName(fileName)), fileSize);
             }
 
             Console.Out.WriteLine("Compressing backup...");
-            // TODO: Compress backups, and organize them.
-            //Directory.Move(tmpFolder, "Backup");
+            var backupName = Path.Combine(BackupFolder, GetBackupFileName());
+            ZipFile.CreateFromDirectory(tmpDir, backupName, CompressionLevel.Optimal, false);
 
+            DeleteDirectory(tmpDir);
+            
+            BackupCompleted?.Invoke(this, new BackupCompletedArguments(backupName, manual, DateTime.Now - start));
+        }
+
+        private static bool DeleteDirectory(string dir)
+        {
             Console.Out.WriteLine("Removing temporary files.");
-
-            // Tell Server to resume saving (backup complete).
-            _serverProcess.SendInputToProcess("save resume");
+            try
+            {
+                Directory.Delete(dir, true);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Couldn't delete temporary files/folder: {e.GetType()} - {e.Message}");
+                return false;
+            }
         }
 
         private static void CopyFile(string source, string destination, int bytesToRead)

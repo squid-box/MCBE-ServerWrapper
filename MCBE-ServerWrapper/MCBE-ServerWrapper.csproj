@@ -48,6 +48,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -56,6 +57,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Backups\BackupCompletedArguments.cs" />
     <Compile Include="Backups\BackupManager.cs" />
     <Compile Include="Backups\BackupReadyArguments.cs" />
     <Compile Include="ExitCodes.cs" />
