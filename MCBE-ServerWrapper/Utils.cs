@@ -55,7 +55,7 @@
         {
             var timespan = TimeSpan.FromMinutes(minutes);
 
-            return $"{Math.Floor(timespan.TotalHours):00.}h {timespan.Minutes:00}m.";
+            return $"{Math.Floor(timespan.TotalHours):00}h {timespan.Minutes:00}m";
         }
 
         /// <summary>

@@ -171,7 +171,7 @@
         public void BackupCompleted(object sender, BackupCompletedArguments args)
         {
             _serverProcess.SendInputToProcess("save resume");
-            _serverProcess.Say($"Backup completed, {Path.GetFileName(args.BackupFile)} ({new FileInfo(args.BackupFile).Length/1024/1024}MB), completed in {args.BackupDuration}.");
+            _serverProcess.Say($"Backup completed: {Path.GetFileName(args.BackupFile)} ({new FileInfo(args.BackupFile).Length/1024/1024}MB), completed in {args.BackupDuration.TotalSeconds}s.");
         }
     }
 }
