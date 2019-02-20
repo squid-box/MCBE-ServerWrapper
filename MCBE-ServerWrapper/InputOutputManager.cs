@@ -17,7 +17,7 @@
         private readonly ServerProcess _serverProcess;
         private readonly PlayerManager _playerManager;
         private readonly ConsoleColor _defaultConsoleColor;
-        private readonly CancellationTokenSource _cancellationTokenSource;
+        private CancellationTokenSource _cancellationTokenSource;
 
         private DateTime _serverStarting;
 
@@ -72,9 +72,12 @@
                 Console.WriteLine("Backup started...");
                 _serverProcess.Say("Backup started.");
 
+                _cancellationTokenSource.Dispose();
+                _cancellationTokenSource = new CancellationTokenSource();
+                
                 BackupReady += (s, a) =>
                 {
-                    _cancellationTokenSource.Cancel();    
+                    _cancellationTokenSource.Cancel();
                 };
 
                 var thread = new Thread(() =>
