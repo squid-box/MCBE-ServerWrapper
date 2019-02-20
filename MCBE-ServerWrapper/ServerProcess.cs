@@ -49,7 +49,7 @@
             }
 
             _inputOutputManager = new InputOutputManager(this);
-            _backupManager = new BackupManager(this);
+            _backupManager = new BackupManager();
             _backupManager.BackupCompleted += _inputOutputManager.BackupCompleted;
 
             _inputOutputManager.BackupReady += _backupManager.ManualBackup;
