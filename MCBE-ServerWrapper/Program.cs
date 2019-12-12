@@ -1,6 +1,7 @@
 ﻿namespace BedrockServerWrapper
 {
     using System;
+    using Updater;
 
     /// <summary>
     /// 
@@ -17,13 +18,22 @@
 
             if (args.Length < 2)
             {
-                if (!Utils.ValidateServerFiles((args.Length == 0) ? string.Empty : args[0]))
+                var rootPath = args.Length == 0 ? "." : args[0];
+
+                if (!Utils.ValidateServerFiles(rootPath))
+                {
+                    Console.Out.WriteLine("Could not find required server files, downloading latest version.");
+
+                    ServerDownloader.GetServerFiles(rootPath);
+                }
+
+                if (!Utils.ValidateServerFiles(rootPath))
                 {
                     PrintUsage(ExitCodes.InvalidServerFiles);
                     Environment.Exit(ExitCodes.InvalidServerFiles);
                 }
 
-                var serverProcess = new ServerProcess(args.Length == 0 ? string.Empty : args[1]);
+                var serverProcess = new ServerProcess(rootPath);
                 serverProcess.Start();
 
                 while (true)
@@ -38,6 +48,10 @@
                     {
                         serverProcess.SendInputToProcess("save hold");
                     }
+                    else if (input.Equals("update", StringComparison.OrdinalIgnoreCase))
+                    {
+                        CheckForUpdates(serverProcess, rootPath);
+                    }
                     else
                     {
                         serverProcess.SendInputToProcess(input);
@@ -45,7 +59,7 @@
                 }
 
                 serverProcess.Stop();
-                
+
                 Environment.Exit(ExitCodes.Ok);
             }
             else
@@ -62,6 +76,36 @@
             Console.WriteLine($"  Version: {Utils.ProgramVersion}");
             Console.WriteLine($"----------------------------------------------");
             Console.WriteLine();
+        }
+
+        private static void CheckForUpdates(ServerProcess serverProcess, string rootPath)
+        {
+            Console.Out.WriteLine("Checking for latest Bedrock server version...");
+            var latestVersion = ServerDownloader.FindLatestServerVersion();
+
+            if (
+                latestVersion != null && 
+                serverProcess.ServerValues.ContainsKey("ServerVersion") && 
+                !string.IsNullOrEmpty(serverProcess.ServerValues["ServerVersion"]))
+            {
+                if (new Version(serverProcess.ServerValues["ServerVersion"]) < latestVersion)
+                {
+                    Console.Out.WriteLine($"Found new version {latestVersion}, stopping server and updating.");
+                    serverProcess.Stop();
+
+                    ServerDownloader.GetServerFiles(rootPath);
+
+                    serverProcess.Start();
+                }
+                else
+                {
+                    Console.Out.WriteLine("Server is up-to-date!");
+                }
+            }
+            else
+            {
+                Console.Error.WriteLine("Unable to determine status version, update check aborted.");
+            }
         }
 
         private static void PrintUsage(int exitCode)
