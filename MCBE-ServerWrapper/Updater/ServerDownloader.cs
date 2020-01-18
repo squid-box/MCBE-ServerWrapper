@@ -81,7 +81,7 @@
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine($"Couldn't get latest Windows server: {e.GetType()} : {e.Message}");
+                Console.Error.WriteLine($"Couldn't get latest Linux server: {e.GetType()} : {e.Message}");
                 return false;
             }
         }
