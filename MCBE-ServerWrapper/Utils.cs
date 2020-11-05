@@ -18,7 +18,7 @@
         public static bool IsLinux()
         {
             var p = (int)Environment.OSVersion.Platform;
-            return (p == 4) || (p == 6) || (p == 128);
+            return p == 4 || p == 6 || p == 128;
         }
 
         /// <summary>
@@ -62,5 +62,42 @@
         /// Gets the version of this program.
         /// </summary>
         public static string ProgramVersion => FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
+
+        public static bool DeleteDirectory(string dir)
+        {
+	        Console.Out.WriteLine("Removing temporary files.");
+	        
+	        try
+	        {
+		        Directory.Delete(dir, true);
+		        return true;
+	        }
+	        catch (Exception e)
+	        {
+		        Console.WriteLine($"Couldn't delete temporary files/folder: {e.GetType()} - {e.Message}");
+		        return false;
+	        }
+        }
+
+        public static void CopyFile(string source, string destination, int bytesToRead)
+        {
+	        var buffer = new byte[bytesToRead];
+
+	        try
+	        {
+		        Directory.CreateDirectory(Path.GetDirectoryName(destination));
+	        }
+	        catch (ArgumentException)
+	        {
+		        // There's no directory in destination path, so nothing to create here.
+	        }
+
+	        using (var reader = new BinaryReader(new FileStream(source, FileMode.Open)))
+	        {
+		        reader.Read(buffer, 0, bytesToRead);
+	        }
+
+	        File.WriteAllBytes(destination, buffer);
+        }  
     }
 }

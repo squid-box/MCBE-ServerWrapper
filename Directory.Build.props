@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <RootDir>$(SolutionDir)</RootDir>
+    <Stage>$(RootDir)\Stage</Stage>
+    <OutputPath>$(Stage)\$(Configuration)\</OutputPath>
+    <BaseIntermediateOutputPath>$(Stage)\obj</BaseIntermediateOutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)\$(Configuration)\$(Platform)\$(MSBuildProjectFile)</IntermediateOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+</Project>

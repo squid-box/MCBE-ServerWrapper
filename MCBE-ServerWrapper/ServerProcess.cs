@@ -10,17 +10,17 @@
     /// <summary>
     /// 
     /// </summary>
-    public class ServerProcess
+    public class ServerProcess : IDisposable
     {
         private readonly Process _serverProcess;
         private readonly InputOutputManager _inputOutputManager;
         private readonly BackupManager _backupManager;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="serverDirectory"></param>
-        public ServerProcess(string serverDirectory)
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="serverDirectory"></param>
+		public ServerProcess(string serverDirectory)
         {
             ServerDirectory = serverDirectory;
             ServerValues = new Dictionary<string, string>();
@@ -175,7 +175,7 @@
         /// 
         /// </summary>
         /// <returns></returns>
-        public List<string> GetOnlineUsers()
+        public ICollection<string> GetOnlineUsers()
         {
             SendInputToProcess("list");
             // TODO: Read list of users from StandardOutput.
@@ -187,12 +187,35 @@
         /// 
         /// </summary>
         /// <returns></returns>
-        public List<string> GetWhitelist()
+        public ICollection<string> GetWhitelist()
         {
             SendInputToProcess("whitelist list");
             // TODO: Read list of whitelist from StandardOutput.
 
             return new List<string>();
         }
-    }
+
+        /// <summary>
+        /// Dispose all resources.
+        /// </summary>
+        /// <param name="disposing">Whether or not we're disposing.</param>
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing)
+			{
+				_inputOutputManager.BackupReady -= _backupManager.ManualBackup;
+				_inputOutputManager.PlayerJoined -= _backupManager.PlayerJoined;
+
+                _inputOutputManager?.Dispose();
+                _serverProcess?.Dispose();
+			}
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+	}
 }
