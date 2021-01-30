@@ -20,8 +20,6 @@
         private CancellationTokenSource _cancellationTokenSource;
 
         private DateTime _serverStarting;
-
-        #region Events
         
         /// <summary>
         /// Invoked when a backup is ready to be copied.
@@ -31,8 +29,6 @@
         public event EventHandler<PlayerConnectionEventArgs> PlayerJoined;
 
         public event EventHandler<PlayerConnectionEventArgs> PlayerDisconnected;
-
-        #endregion
 
         /// <summary>
         /// 

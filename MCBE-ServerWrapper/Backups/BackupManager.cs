@@ -19,6 +19,7 @@
         /// </summary>
         public BackupManager()
         {
+            HasBackupBeenInitiated = false;
             _hasUserBeenOnlineSinceLastBackup = false;
         }
 
@@ -26,6 +27,11 @@
         /// Invoked whenever a backup has been completed.
         /// </summary>
         public event EventHandler<BackupCompletedEventArgs> BackupCompleted;
+
+        /// <summary>
+        /// Value indicating whether or not a backup has been initiated.
+        /// </summary>
+        public bool HasBackupBeenInitiated { get; set; }
 
         /// <summary>
         /// Gets the path to the backup folder.
@@ -55,7 +61,10 @@
 
         internal void ManualBackup(object sender, BackupReadyEventArgs eventArgs)
         {
-            Backup(eventArgs.BackupArguments, true);
+            if (HasBackupBeenInitiated)
+            {
+                Backup(eventArgs.BackupArguments, true);
+            }
         }
 
         private void Backup(string arguments, bool manual)
@@ -87,6 +96,7 @@
             Utils.DeleteDirectory(tmpDir);
             
             BackupCompleted?.Invoke(this, new BackupCompletedEventArgs(backupName, manual, DateTime.Now - start));
+            HasBackupBeenInitiated = false;
         }
 
         private static string GetBackupFileName()

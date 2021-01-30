@@ -52,12 +52,16 @@
 		                }
 		                else if (input.Equals("backup", StringComparison.OrdinalIgnoreCase))
 		                {
-			                serverProcess.SendInputToProcess("save hold");
+                            serverProcess.Backup();
 		                }
 		                else if (input.Equals("update", StringComparison.OrdinalIgnoreCase))
 		                {
 			                CheckForUpdates(serverProcess, rootPath);
 		                }
+                        else if (input.Equals("values", StringComparison.OrdinalIgnoreCase))
+                        {
+                            serverProcess.PrintServerValues();
+                        }
 		                else
 		                {
 			                serverProcess.SendInputToProcess(input);

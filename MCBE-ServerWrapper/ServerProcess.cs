@@ -112,6 +112,15 @@
         }
 
         /// <summary>
+        /// Initiates a backup.
+        /// </summary>
+        public void Backup()
+        {
+            _backupManager.HasBackupBeenInitiated = true;
+            SendInputToProcess("save hold");
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         public void Start()
@@ -151,6 +160,16 @@
             _serverProcess.CancelErrorRead();
             _serverProcess.OutputDataReceived -= _inputOutputManager.ReceivedStandardOutput;
             _serverProcess.ErrorDataReceived -= _inputOutputManager.ReceivedErrorOutput;
+        }
+
+        public void PrintServerValues()
+        {
+            Console.Out.WriteLine("Server values:");
+
+            foreach (var serverValue in ServerValues)
+            {
+                Console.Out.WriteLine($" * {serverValue.Key} : {serverValue.Value}");
+            }
         }
 
         /// <summary>

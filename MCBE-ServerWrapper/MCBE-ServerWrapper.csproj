@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <ActualVersion>0.1.0.0</ActualVersion>
+    <ActualVersion>0.0.2.0</ActualVersion>
   </PropertyGroup>
   <PropertyGroup>
     <ProjectGuid>{A03B0023-D14F-454B-BBD9-E8CECB76A769}</ProjectGuid>

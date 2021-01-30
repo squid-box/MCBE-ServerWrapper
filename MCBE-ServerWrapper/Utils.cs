@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
+    using System.Linq;
     using System.Reflection;
 
     /// <summary>
@@ -32,23 +33,15 @@
 
             if (IsLinux())
             {
-                requiredFiles.Add("bedrock_server");
-                requiredFiles.Add("libCrypto.so");
+                requiredFiles.Add(Path.Combine(rootDirectory, "bedrock_server"));
+                requiredFiles.Add(Path.Combine(rootDirectory, "libCrypto.so"));
             }
             else
             {
-                requiredFiles.Add("bedrock_server.exe");
+                requiredFiles.Add(Path.Combine(rootDirectory, "bedrock_server.exe"));
             }
 
-            foreach (var file in requiredFiles)
-            {
-                if (!File.Exists(file))
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return requiredFiles.All(File.Exists);
         }
 
         public static string TimePlayedConversion(int minutes)
