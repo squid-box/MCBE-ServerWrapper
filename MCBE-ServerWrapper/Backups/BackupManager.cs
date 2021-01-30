@@ -1,30 +1,53 @@
 ﻿namespace BedrockServerWrapper.Backups
 {
     using System;
+    using System.Globalization;
     using System.IO;
     using System.IO.Compression;
 
     using PlayerManagement;
 
+    /// <summary>
+    /// Manages server backups.
+    /// </summary>
     public class BackupManager
     {
         private bool _hasUserBeenOnlineSinceLastBackup;
 
+        /// <summary>
+        /// Creates a new <see cref="BackupManager"/>.
+        /// </summary>
         public BackupManager()
         {
+            HasBackupBeenInitiated = false;
             _hasUserBeenOnlineSinceLastBackup = false;
         }
 
-        public event EventHandler<BackupCompletedArguments> BackupCompleted;
+        /// <summary>
+        /// Invoked whenever a backup has been completed.
+        /// </summary>
+        public event EventHandler<BackupCompletedEventArgs> BackupCompleted;
 
+        /// <summary>
+        /// Value indicating whether or not a backup has been initiated.
+        /// </summary>
+        public bool HasBackupBeenInitiated { get; set; }
+
+        /// <summary>
+        /// Gets the path to the backup folder.
+        /// </summary>
         public static string BackupFolder => @"Backups";
 
-        public void PlayerJoined(object sender, PlayerConnectionEventArgs args)
+        internal void PlayerJoined(object sender, PlayerConnectionEventArgs args)
         {
             _hasUserBeenOnlineSinceLastBackup = true;
         }
 
-        public void RunScheduledBackup(string arguments)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="arguments"></param>
+        internal void RunScheduledBackup(string arguments)
         {
             if (_hasUserBeenOnlineSinceLastBackup)
             {
@@ -36,9 +59,12 @@
             }
         }
 
-        public void ManualBackup(object sender, BackupReadyArguments arguments)
+        internal void ManualBackup(object sender, BackupReadyEventArgs eventArgs)
         {
-            Backup(arguments.BackupArguments, true);
+            if (HasBackupBeenInitiated)
+            {
+                Backup(eventArgs.BackupArguments, true);
+            }
         }
 
         private void Backup(string arguments, bool manual)
@@ -47,7 +73,7 @@
             var tmpDir = Path.Combine(BackupFolder, "tmp");
             if (Directory.Exists(tmpDir))
             {
-                DeleteDirectory(tmpDir);
+	            Utils.DeleteDirectory(tmpDir);
             }
             Directory.CreateDirectory(tmpDir);
 
@@ -57,55 +83,20 @@
             {
                 var fileTmp = file.Trim().Split(':');
                 var fileName = Path.Combine("worlds", fileTmp[0]);
-                var fileSize = Convert.ToInt32(fileTmp[1]);
+                var fileSize = Convert.ToInt32(fileTmp[1], CultureInfo.InvariantCulture);
 
                 Console.Out.WriteLine($" - Copying {fileName}...");
-                CopyFile(fileName, Path.Combine(tmpDir, fileName), fileSize);
+                Utils.CopyFile(fileName, Path.Combine(tmpDir, fileName), fileSize);
             }
 
             Console.Out.WriteLine("Compressing backup...");
             var backupName = Path.Combine(BackupFolder, GetBackupFileName());
             ZipFile.CreateFromDirectory(tmpDir, backupName, CompressionLevel.Optimal, false);
 
-            DeleteDirectory(tmpDir);
+            Utils.DeleteDirectory(tmpDir);
             
-            BackupCompleted?.Invoke(this, new BackupCompletedArguments(backupName, manual, DateTime.Now - start));
-        }
-
-        private static bool DeleteDirectory(string dir)
-        {
-            Console.Out.WriteLine("Removing temporary files.");
-            try
-            {
-                Directory.Delete(dir, true);
-                return true;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Couldn't delete temporary files/folder: {e.GetType()} - {e.Message}");
-                return false;
-            }
-        }
-
-        private static void CopyFile(string source, string destination, int bytesToRead)
-        {
-            var buffer = new byte[bytesToRead];
-
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(destination));
-            }
-            catch (ArgumentException)
-            {
-                // There's no directory in destination path, so nothing to create here.
-            }
-
-            using (var reader = new BinaryReader(new FileStream(source, FileMode.Open)))
-            {
-                reader.Read(buffer, 0, bytesToRead);
-            }
-
-            File.WriteAllBytes(destination, buffer);
+            BackupCompleted?.Invoke(this, new BackupCompletedEventArgs(backupName, manual, DateTime.Now - start));
+            HasBackupBeenInitiated = false;
         }
 
         private static string GetBackupFileName()

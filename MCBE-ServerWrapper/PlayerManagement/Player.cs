@@ -1,12 +1,14 @@
 ﻿namespace BedrockServerWrapper.PlayerManagement
 {
+    using System;
+
     /// <summary>
     /// Represents a player on the server.
     /// </summary>
     public class Player
     {
         /// <summary>
-        /// Creeates a new <see cref="Player"/>.
+        /// Creates a new <see cref="Player"/>.
         /// </summary>
         /// <param name="name">Name of the <see cref="Player"/>.</param>
         /// <param name="xuid">XUID of the <see cref="Player"/>.</param>
@@ -47,8 +49,12 @@
                 return false;
             }
 
-            var other = (Player)obj;
-            return Name.Equals(other.Name) && Xuid.Equals(other.Xuid);
+            if (obj is Player other)
+            {
+	            return Name.Equals(other.Name, StringComparison.Ordinal) && Xuid.Equals(other.Xuid, StringComparison.Ordinal);
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -68,7 +74,7 @@
         /// <returns>True if <see cref="Player"/>s are equal, otherwise false.</returns>
         public static bool operator ==(Player player1, Player player2)
         {
-            return player1.Equals(player2);
+	        return !(player1 == null) && player1.Equals(player2);
         }
 
         /// <summary>
@@ -76,10 +82,10 @@
         /// </summary>
         /// <param name="player1">First <see cref="Player"/>.</param>
         /// <param name="player2">Second <see cref="Player"/>.</param>
-        /// <returns>True if <see cref="Player"/>s are inequal, otherwise false.</returns>
+        /// <returns>True if <see cref="Player"/>s are unequal, otherwise false.</returns>
         public static bool operator !=(Player player1, Player player2)
         {
-            return !player1.Equals(player2);
+            return !(player1 is null) && !player1.Equals(player2);
         }
     }
 }

@@ -12,7 +12,7 @@
     /// <summary>
     /// 
     /// </summary>
-    public class InputOutputManager
+    public class InputOutputManager : IDisposable
     {
         private readonly ServerProcess _serverProcess;
         private readonly PlayerManager _playerManager;
@@ -20,20 +20,20 @@
         private CancellationTokenSource _cancellationTokenSource;
 
         private DateTime _serverStarting;
-
-        #region Events
         
         /// <summary>
         /// Invoked when a backup is ready to be copied.
         /// </summary>
-        public event EventHandler<BackupReadyArguments> BackupReady;
+        public event EventHandler<BackupReadyEventArgs> BackupReady;
 
         public event EventHandler<PlayerConnectionEventArgs> PlayerJoined;
 
         public event EventHandler<PlayerConnectionEventArgs> PlayerDisconnected;
 
-        #endregion
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="serverProcess"></param>
         public InputOutputManager(ServerProcess serverProcess)
         {
             _serverProcess = serverProcess;
@@ -46,7 +46,7 @@
             PlayerDisconnected += _playerManager.PlayerDisconnected;
         }
 
-        public void ReceivedStandardOutput(object sender, DataReceivedEventArgs e)
+        internal void ReceivedStandardOutput(object sender, DataReceivedEventArgs e)
         {
             if (e?.Data == null)
             {
@@ -96,7 +96,7 @@
             if (e.Data.Contains("level.dat"))
             {
                 _cancellationTokenSource.Cancel();
-                BackupReady?.Invoke(this, new BackupReadyArguments(e.Data, _playerManager.UsersOnline > 0));
+                BackupReady?.Invoke(this, new BackupReadyEventArgs(e.Data, _playerManager.UsersOnline > 0));
                 return;
             }
 
@@ -161,17 +161,36 @@
             Console.WriteLine(e.Data);
         }
 
-        public void ReceivedErrorOutput(object sender, DataReceivedEventArgs e)
+        internal void ReceivedErrorOutput(object sender, DataReceivedEventArgs e)
         {
             Console.ForegroundColor = ConsoleColor.DarkRed;
             Console.WriteLine(e.Data);
             Console.ForegroundColor = _defaultConsoleColor;
         }
 
-        public void BackupCompleted(object sender, BackupCompletedArguments args)
+        internal void BackupCompleted(object sender, BackupCompletedEventArgs args)
         {
             _serverProcess.SendInputToProcess("save resume");
             _serverProcess.Say($"Backup completed: {Path.GetFileName(args.BackupFile)} ({new FileInfo(args.BackupFile).Length/1024/1024}MB), completed in {args.BackupDuration.TotalSeconds}s.");
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+	        Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Dispose all resources.
+        /// </summary>
+        /// <param name="disposing">Whether or not we're disposing.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+	        if (disposing)
+	        {
+		        _cancellationTokenSource?.Dispose();
+	        }
         }
     }
 }

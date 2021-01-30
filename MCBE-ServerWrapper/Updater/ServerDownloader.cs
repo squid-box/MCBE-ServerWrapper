@@ -32,29 +32,25 @@
             }
         }
 
+        /// <summary>
+        /// Determines the latest version of the server available for the current system.
+        /// </summary>
+        /// <returns>The latest version of the server available.</returns>
         public static Version FindLatestServerVersion()
         {
-            if (Utils.IsLinux())
-            {
-                return FindLatestLinuxServerVersion();
-            }
-            else
-            {
-                return FindLatestWindowsServerVersion();
-            }
+	        return Utils.IsLinux() ? FindLatestLinuxServerVersion() : FindLatestWindowsServerVersion();
         }
 
-        public static Version FindLatestWindowsServerVersion()
+        private static Version FindLatestWindowsServerVersion()
         {
             return FindCurrentVersion(@"https://minecraft.azureedge.net/bin-win/bedrock-server-(.*).zip");
         }
-
-        public static Version FindLatestLinuxServerVersion()
+        private static Version FindLatestLinuxServerVersion()
         {
             return FindCurrentVersion(@"https://minecraft.azureedge.net/bin-linux/bedrock-server-(.*).zip");
         }
 
-        public static bool DownloadAndUnpackWindowsServer(string targetDirectory)
+        private static bool DownloadAndUnpackWindowsServer(string targetDirectory)
         {
             Console.Out.WriteLine("Attempting to download Windows server files...");
 
@@ -70,7 +66,7 @@
             }
         }
 
-        public static bool DownloadAndUnpackLinuxServer(string targetDirectory)
+        private static bool DownloadAndUnpackLinuxServer(string targetDirectory)
         {
             Console.Out.WriteLine("Attempting to download Linux server files...");
 
@@ -158,7 +154,7 @@
                                 continue;
                             }
 
-                            entry.ExtractToFile(destination, true);
+							entry.ExtractToFile(destination, true);
                         }
                     }
 

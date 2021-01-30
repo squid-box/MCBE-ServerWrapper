@@ -6,7 +6,7 @@
     /// <summary>
     /// 
     /// </summary>
-    public class Program
+    public static class Program
     {
         /// <summary>
         /// 
@@ -16,7 +16,7 @@
         {
             PrintTitle();
 
-            if (args.Length < 2)
+            if (args != null && args.Length < 2)
             {
                 var rootPath = args.Length == 0 ? "." : args[0];
 
@@ -33,32 +33,43 @@
                     Environment.Exit(ExitCodes.InvalidServerFiles);
                 }
 
-                var serverProcess = new ServerProcess(rootPath);
-                serverProcess.Start();
-
-                while (true)
+                using (var serverProcess = new ServerProcess(rootPath))
                 {
-                    var input = Console.ReadLine();
+	                serverProcess.Start();
 
-                    if (input.Equals("stop", StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        break;
-                    }
-                    else if (input.Equals("backup", StringComparison.OrdinalIgnoreCase))
-                    {
-                        serverProcess.SendInputToProcess("save hold");
-                    }
-                    else if (input.Equals("update", StringComparison.OrdinalIgnoreCase))
-                    {
-                        CheckForUpdates(serverProcess, rootPath);
-                    }
-                    else
-                    {
-                        serverProcess.SendInputToProcess(input);
-                    }
+	                while (true)
+	                {
+		                var input = Console.ReadLine();
+
+		                if (string.IsNullOrWhiteSpace(input))
+		                {
+			                continue;
+		                }
+
+		                if (input.Equals("stop", StringComparison.OrdinalIgnoreCase))
+		                {
+			                break;
+		                }
+		                else if (input.Equals("backup", StringComparison.OrdinalIgnoreCase))
+		                {
+                            serverProcess.Backup();
+		                }
+		                else if (input.Equals("update", StringComparison.OrdinalIgnoreCase))
+		                {
+			                CheckForUpdates(serverProcess, rootPath);
+		                }
+                        else if (input.Equals("values", StringComparison.OrdinalIgnoreCase))
+                        {
+                            serverProcess.PrintServerValues();
+                        }
+		                else
+		                {
+			                serverProcess.SendInputToProcess(input);
+		                }
+	                }
+
+	                serverProcess.Stop();
                 }
-
-                serverProcess.Stop();
 
                 Environment.Exit(ExitCodes.Ok);
             }
@@ -71,10 +82,10 @@
 
         private static void PrintTitle()
         {
-            Console.WriteLine($"----------------------------------------------");
-            Console.WriteLine($"  Minecraft Bedrock Dedicated Server Wrapper  ");
+            Console.WriteLine("----------------------------------------------");
+            Console.WriteLine("  Minecraft Bedrock Dedicated Server Wrapper  ");
             Console.WriteLine($"  Version: {Utils.ProgramVersion}");
-            Console.WriteLine($"----------------------------------------------");
+            Console.WriteLine("----------------------------------------------");
             Console.WriteLine();
         }
 

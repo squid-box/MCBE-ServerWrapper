@@ -13,6 +13,9 @@
     {
         private const string PlayerLogFile = @"playerlog.json";
 
+        /// <summary>
+        /// 
+        /// </summary>
         public PlayerManager()
         {
             _online = new Dictionary<Player, DateTime>();
@@ -32,7 +35,7 @@
         /// <summary>
         /// Called when a <see cref="Player"/> logs in.
         /// </summary>
-        public void PlayerConnected(object sender, PlayerConnectionEventArgs args)
+        internal void PlayerConnected(object sender, PlayerConnectionEventArgs args)
         {
             if (_online.ContainsKey(args.Player))
             {
@@ -48,7 +51,7 @@
         /// </summary>
         /// <param name="player"><see cref="Player"/> to check played time for.</param>
         /// <returns>Number of minutes the <see cref="Player"/> has spent on this server.</returns>
-        public int GetPlayedMinutes(Player player)
+        internal int GetPlayedMinutes(Player player)
         {
             if (!_timeLog.ContainsKey(player.Name))
             {
@@ -61,8 +64,7 @@
         /// <summary>
         /// Called when a <see cref="Player"/> logs out.
         /// </summary>
-        /// <param name="player"><see cref="Player"/> that logs out.</param>
-        public void PlayerDisconnected(object sender, PlayerConnectionEventArgs args)
+        internal void PlayerDisconnected(object sender, PlayerConnectionEventArgs args)
         {
             if (!_online.ContainsKey(args.Player))
             {
@@ -86,7 +88,7 @@
         /// </summary>
         public int UsersOnline => _online.Count;
 
-        private Dictionary<string, int> LoadTimeLog()
+        private static Dictionary<string, int> LoadTimeLog()
         {
             if (File.Exists(PlayerLogFile))
             {

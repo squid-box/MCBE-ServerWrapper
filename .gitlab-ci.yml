@@ -1,0 +1,34 @@
+variables:
+  EXE_RELEASE_FOLDER: 'Stage\Release'
+  DEPLOY_FOLDER: 'Stage\Deploy'
+  MSBUILD_PATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\msbuild.exe'
+
+stages:
+  - build
+  - deploy
+
+build_job:
+  stage: build
+  script:
+    - '& "$env:MSBUILD_PATH" /p:Configuration=Release /p:Platform="Any CPU" /restore'
+  artifacts:
+    expire_in: 1 week  # save gitlab server space, we copy the files we need to deploy folder later on
+    paths:
+      - '$env:EXE_RELEASE_FOLDER\MCBSW.exe'  # saving exe to copy to deploy folder
+
+deploy_job:
+  stage: deploy
+  only:
+    - tags
+  script:
+    # Compose a folder for each release based on commit tag.
+    # Assuming your tag is Rev1.0.0.1, and your last commit message is 'First commit'
+    # the artifact files will be copied to:
+    # P:\Projects\YourApp\Builds\Rev1.0.0.1 - First commit\
+    - '$commitSubject = git log -1 --pretty=%s'
+    - '$deployFolder = $($env:DEPLOY_FOLDER) + "\" + $($env:CI_BUILD_TAG) + " - " + $commitSubject + "\"'
+
+    # xcopy takes care of recursively creating required folders
+    - 'xcopy /y ".\$env:EXE_RELEASE_FOLDER\MCBSW.exe" "$deployFolder"'
+  dependencies:
+    - build_job
