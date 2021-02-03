@@ -15,6 +15,7 @@
         private readonly Process _serverProcess;
         private readonly InputOutputManager _inputOutputManager;
         private readonly BackupManager _backupManager;
+        private readonly PapyrusCsController _papyrusCsController;
 
 		/// <summary>
 		/// 
@@ -24,6 +25,8 @@
         {
             ServerDirectory = serverDirectory;
             ServerValues = new Dictionary<string, string>();
+
+            Settings = Settings.Load();
 
             _serverProcess = new Process
             {
@@ -49,7 +52,8 @@
             }
 
             _inputOutputManager = new InputOutputManager(this);
-            _backupManager = new BackupManager();
+            _papyrusCsController = new PapyrusCsController(Settings);
+            _backupManager = new BackupManager(Settings, _papyrusCsController);
             _backupManager.BackupCompleted += _inputOutputManager.BackupCompleted;
 
             _inputOutputManager.BackupReady += _backupManager.ManualBackup;
@@ -65,6 +69,11 @@
         /// 
         /// </summary>
         public string ServerDirectory { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public Settings Settings { get; }
 
         /// <summary>
         /// 

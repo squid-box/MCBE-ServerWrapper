@@ -12,13 +12,18 @@
     /// </summary>
     public class BackupManager
     {
+        private readonly Settings _settings;
+        private readonly PapyrusCsController _papyrusCsController;
         private bool _hasUserBeenOnlineSinceLastBackup;
 
         /// <summary>
         /// Creates a new <see cref="BackupManager"/>.
         /// </summary>
-        public BackupManager()
+        public BackupManager(Settings settings, PapyrusCsController papyrusCsController)
         {
+            _settings = settings;
+            _papyrusCsController = papyrusCsController;
+
             HasBackupBeenInitiated = false;
             _hasUserBeenOnlineSinceLastBackup = false;
         }
@@ -32,11 +37,6 @@
         /// Value indicating whether or not a backup has been initiated.
         /// </summary>
         public bool HasBackupBeenInitiated { get; set; }
-
-        /// <summary>
-        /// Gets the path to the backup folder.
-        /// </summary>
-        public static string BackupFolder => @"Backups";
 
         internal void PlayerJoined(object sender, PlayerConnectionEventArgs args)
         {
@@ -70,11 +70,13 @@
         private void Backup(string arguments, bool manual)
         {
             var start = DateTime.Now;
-            var tmpDir = Path.Combine(BackupFolder, "tmp");
+            var tmpDir = Path.Combine(_settings.BackupFolder, "tmp");
+            
             if (Directory.Exists(tmpDir))
             {
 	            Utils.DeleteDirectory(tmpDir);
             }
+            
             Directory.CreateDirectory(tmpDir);
 
             Console.Out.WriteLine("Copying files...");
@@ -90,8 +92,11 @@
             }
 
             Console.Out.WriteLine("Compressing backup...");
-            var backupName = Path.Combine(BackupFolder, GetBackupFileName());
+            var backupName = Path.Combine(_settings.BackupFolder, GetBackupFileName());
             ZipFile.CreateFromDirectory(tmpDir, backupName, CompressionLevel.Optimal, false);
+
+            // TODO: Ugly hardcoded, need to dynamically find this.
+            _papyrusCsController.GenerateMap(Path.Combine(tmpDir, "worlds", "world"));
 
             Utils.DeleteDirectory(tmpDir);
             
