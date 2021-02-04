@@ -85,7 +85,7 @@
 		        // There's no directory in destination path, so nothing to create here.
 	        }
 
-	        using (var reader = new BinaryReader(new FileStream(source, FileMode.Open)))
+	        using (var reader = new BinaryReader(new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
 	        {
 		        reader.Read(buffer, 0, bytesToRead);
 	        }

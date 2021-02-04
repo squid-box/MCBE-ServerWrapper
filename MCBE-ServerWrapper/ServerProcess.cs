@@ -15,7 +15,6 @@
         private readonly Process _serverProcess;
         private readonly InputOutputManager _inputOutputManager;
         private readonly BackupManager _backupManager;
-        private readonly PapyrusCsController _papyrusCsController;
 
 		/// <summary>
 		/// 
@@ -52,8 +51,7 @@
             }
 
             _inputOutputManager = new InputOutputManager(this);
-            _papyrusCsController = new PapyrusCsController(Settings);
-            _backupManager = new BackupManager(Settings, _papyrusCsController);
+            _backupManager = new BackupManager(Settings);
             _backupManager.BackupCompleted += _inputOutputManager.BackupCompleted;
 
             _inputOutputManager.BackupReady += _backupManager.ManualBackup;
@@ -182,48 +180,6 @@
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="name"></param>
-        public void AddUserToWhitelist(string name)
-        {
-            SendInputToProcess($"whitelist add {name}");
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="name"></param>
-        public void RemoveUserFromWhitelist(string name)
-        {
-            SendInputToProcess($"whitelist remove {name}");
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public ICollection<string> GetOnlineUsers()
-        {
-            SendInputToProcess("list");
-            // TODO: Read list of users from StandardOutput.
-
-            return new List<string>();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public ICollection<string> GetWhitelist()
-        {
-            SendInputToProcess("whitelist list");
-            // TODO: Read list of whitelist from StandardOutput.
-
-            return new List<string>();
-        }
-
-        /// <summary>
         /// Dispose all resources.
         /// </summary>
         /// <param name="disposing">Whether or not we're disposing.</param>
@@ -231,6 +187,8 @@
 		{
 			if (disposing)
 			{
+                Settings.Save();
+
 				_inputOutputManager.BackupReady -= _backupManager.ManualBackup;
 				_inputOutputManager.PlayerJoined -= _backupManager.PlayerJoined;
 

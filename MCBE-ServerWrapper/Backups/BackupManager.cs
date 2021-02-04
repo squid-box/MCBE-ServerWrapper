@@ -19,10 +19,10 @@
         /// <summary>
         /// Creates a new <see cref="BackupManager"/>.
         /// </summary>
-        public BackupManager(Settings settings, PapyrusCsController papyrusCsController)
+        public BackupManager(Settings settings)
         {
             _settings = settings;
-            _papyrusCsController = papyrusCsController;
+            _papyrusCsController = new PapyrusCsController(_settings);
 
             HasBackupBeenInitiated = false;
             _hasUserBeenOnlineSinceLastBackup = false;
@@ -83,20 +83,32 @@
 
             foreach (var file in arguments.Split(','))
             {
-                var fileTmp = file.Trim().Split(':');
-                var fileName = Path.Combine("worlds", fileTmp[0]);
-                var fileSize = Convert.ToInt32(fileTmp[1], CultureInfo.InvariantCulture);
+                try
+                {
+                    var fileTmp = file.Trim().Split(':');
+                    var fileName = Path.Combine("worlds", fileTmp[0]);
+                    var fileSize = Convert.ToInt32(fileTmp[1], CultureInfo.InvariantCulture);
 
-                Console.Out.WriteLine($" - Copying {fileName}...");
-                Utils.CopyFile(fileName, Path.Combine(tmpDir, fileName), fileSize);
+                    Console.Out.WriteLine($" - Copying {fileName}...");
+                    Utils.CopyFile(fileName, Path.Combine(tmpDir, fileName), fileSize);
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine($"Backup failed: {e.GetType()}: {e.Message}");
+                    Utils.DeleteDirectory(tmpDir);
+                    HasBackupBeenInitiated = false;
+
+                    BackupCompleted?.Invoke(this, new BackupCompletedEventArgs(string.Empty, manual, TimeSpan.Zero, false));
+
+                    return;
+                }
             }
 
             Console.Out.WriteLine("Compressing backup...");
             var backupName = Path.Combine(_settings.BackupFolder, GetBackupFileName());
             ZipFile.CreateFromDirectory(tmpDir, backupName, CompressionLevel.Optimal, false);
 
-            // TODO: Ugly hardcoded, need to dynamically find this.
-            _papyrusCsController.GenerateMap(Path.Combine(tmpDir, "worlds", "world"));
+            _papyrusCsController.GenerateMap(Path.Combine(tmpDir, "worlds", _settings.LevelName));
 
             Utils.DeleteDirectory(tmpDir);
             

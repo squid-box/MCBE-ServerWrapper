@@ -6,7 +6,7 @@
 
     public class Settings
     {
-        private const string SettingsFile = "mcbe.conf";
+        private const string SettingsFile = "mcbsw.conf";
 
         public bool AutomaticUpdatesEnabled { get; set; }
 
@@ -21,6 +21,8 @@
         /// Folder where map is saved.
         /// </summary>
         public string PapyrusOutputFolder { get; set; }
+
+        public string LevelName { get; set; }
 
         /// <summary>
         /// Optional command that will be executed after map generation.

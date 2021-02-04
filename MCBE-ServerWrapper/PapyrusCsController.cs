@@ -47,29 +47,12 @@
                 }
             }
 
-            using (var process = new Process())
-            {
-                process.StartInfo = new ProcessStartInfo
-                {
-                    FileName = PapyrusCsExecutable,
-                    Arguments = $"-w \"{worldFolder}\" -o \"{_settings.PapyrusOutputFolder}\" --htmlfile index.html",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
+            GenerateDimensionMap(worldFolder, 0);
+            GenerateDimensionMap(worldFolder, 1);
+            GenerateDimensionMap(worldFolder, 2);
 
-                process.Start();
-                process.WaitForExit();
-
-                if (process.ExitCode != 0)
-                {
-                    Console.Error.WriteLine($"Map generation failed with exit code {process.ExitCode}.");
-                    return;
-                }
-            }
-
-            Console.WriteLine("Map generation done.");
-            Console.WriteLine($"PostRunCommand: {_settings.PapyrusPostRunCommand}");
-
+            Console.Out.WriteLine("Map generation done.");
+            
             if (!string.IsNullOrEmpty(_settings.PapyrusPostRunCommand))
             {
                 using (var process = new Process())
@@ -86,6 +69,37 @@
                     process.WaitForExit();
 
                     Console.Out.WriteLine($"PostRunCommand executed with {process.ExitCode}.");
+                }
+            }
+        }
+
+        private void GenerateDimensionMap(string worldFolder, int dimension)
+        {
+            Console.Out.WriteLine($"Generating map for dimension {dimension}.");
+
+            using (var process = new Process())
+            {
+                process.StartInfo = new ProcessStartInfo
+                {
+                    FileName = PapyrusCsExecutable,
+                    Arguments = $"-w \"{worldFolder}\" -o \"{_settings.PapyrusOutputFolder}\" --dim {dimension} --htmlfile index.html",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                
+                process.Start();
+                process.WaitForExit();
+
+                if (process.ExitCode != 0)
+                {
+                    if (process.ExitCode == -532462766)
+                    {
+                        Console.Error.WriteLine("Couldn't generate map for non-existent dimension.");
+                    }
+                    else
+                    {
+                        Console.Error.WriteLine($"Map generation failed with exit code {process.ExitCode}.");
+                    }
                 }
             }
         }
