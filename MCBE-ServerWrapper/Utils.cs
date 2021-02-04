@@ -56,10 +56,8 @@
         /// </summary>
         public static string ProgramVersion => FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
 
-        public static bool DeleteDirectory(string dir)
+        public static bool DeleteDirectory(string dir, Log log)
         {
-	        Console.Out.WriteLine("Removing temporary files.");
-	        
 	        try
 	        {
 		        Directory.Delete(dir, true);
@@ -67,7 +65,7 @@
 	        }
 	        catch (Exception e)
 	        {
-		        Console.WriteLine($"Couldn't delete temporary files/folder: {e.GetType()} - {e.Message}");
+		        log?.Error($"Couldn't delete files/folder: {e.GetType()} - {e.Message}");
 		        return false;
 	        }
         }

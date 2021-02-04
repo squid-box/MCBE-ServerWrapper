@@ -4,12 +4,21 @@
     using System.IO;
     using Newtonsoft.Json;
 
+    /// <summary>
+    /// Application settings.
+    /// </summary>
     public class Settings
     {
         private const string SettingsFile = "mcbsw.conf";
 
+        /// <summary>
+        /// Whether or not automatic updates are enabled.
+        /// </summary>
         public bool AutomaticUpdatesEnabled { get; set; }
 
+        /// <summary>
+        /// The number of minutes between automatic updates.
+        /// </summary>
         public int AutomaticBackupFrequency { get; set; }
 
         /// <summary>
@@ -22,6 +31,9 @@
         /// </summary>
         public string PapyrusOutputFolder { get; set; }
 
+        /// <summary>
+        /// Name of the folder where world (level) data is saved.
+        /// </summary>
         public string LevelName { get; set; }
 
         /// <summary>
@@ -29,13 +41,25 @@
         /// </summary>
         public string PapyrusPostRunCommand { get; set; }
 
+        /// <summary>
+        /// Folder where backups are placed.
+        /// </summary>
         public string BackupFolder { get; set; }
+
+        /// <summary>
+        /// File where log is saved.
+        /// </summary>
+        public string LogFilePath { get; set; }
 
         private Settings()
         {
             // Empty constructor to block public constructor.
         }
-
+        
+        /// <summary>
+        /// Load settings from file, or create a new file.
+        /// </summary>
+        /// <returns>A Settings object.</returns>
         public static Settings Load()
         {
             if (File.Exists(SettingsFile))
@@ -52,7 +76,7 @@
         }
 
         /// <summary>
-        /// 
+        /// Saves the settings to file.
         /// </summary>
         public void Save()
         {
@@ -70,6 +94,7 @@
             BackupFolder = "Backups";
             PapyrusCsFolder = "PapyrusCs";
             PapyrusOutputFolder = Path.Combine(PapyrusCsFolder, "GeneratedMap");
+            LogFilePath = "mcbsw.log";
         }
     }
 }

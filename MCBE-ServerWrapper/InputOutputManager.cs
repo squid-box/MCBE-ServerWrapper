@@ -16,9 +16,10 @@
     {
         private readonly ServerProcess _serverProcess;
         private readonly PlayerManager _playerManager;
-        private readonly ConsoleColor _defaultConsoleColor;
-        private CancellationTokenSource _cancellationTokenSource;
+        private readonly Log _log;
+        private readonly Settings _settings;
 
+        private CancellationTokenSource _cancellationTokenSource;
         private DateTime _serverStarting;
         
         /// <summary>
@@ -34,12 +35,14 @@
         /// 
         /// </summary>
         /// <param name="serverProcess"></param>
-        public InputOutputManager(ServerProcess serverProcess)
+        /// <param name="log"></param>
+        public InputOutputManager(Log log, Settings settings, ServerProcess serverProcess)
         {
+            _log = log;
+            _settings = settings;
             _serverProcess = serverProcess;
-            _playerManager = new PlayerManager();
+            _playerManager = new PlayerManager(log);
             _serverStarting = DateTime.MinValue;
-            _defaultConsoleColor = Console.ForegroundColor;
             _cancellationTokenSource = new CancellationTokenSource();
 
             PlayerJoined += _playerManager.PlayerConnected;
@@ -62,14 +65,14 @@
             {
                 if (_serverStarting != DateTime.MinValue)
                 {
-                    Console.WriteLine($"Server started in {(DateTime.Now - _serverStarting).TotalMilliseconds} ms.");
+                    _log.Info($"Server started in {(DateTime.Now - _serverStarting).TotalMilliseconds} ms.");
                     return;
                 }
             }
 
             if (e.Data.Contains("Saving..."))
             {
-                Console.WriteLine("Backup started...");
+                _log.Info("Backup started...");
                 _serverProcess.Say("Backup started.");
 
                 _cancellationTokenSource.Dispose();
@@ -140,7 +143,7 @@
 
             if (e.Data.Contains("Level Name: ") && !_serverProcess.ServerValues.ContainsKey("LevelName"))
             {
-                _serverProcess.Settings.LevelName = Regex.Match(e.Data, @".*Level Name: (.*)").Groups[1].Value;
+                _settings.LevelName = Regex.Match(e.Data, @".*Level Name: (.*)").Groups[1].Value;
             }
 
             if (e.Data.Contains("Version") && !_serverProcess.ServerValues.ContainsKey("ServerVersion"))
@@ -158,14 +161,12 @@
                 _serverProcess.ServerValues["IpV6Port"] = Regex.Match(e.Data, @".*port: (\d*)").Groups[1].Value;
             }
 
-            Console.WriteLine(e.Data);
+            _log.Info(e.Data);
         }
 
         internal void ReceivedErrorOutput(object sender, DataReceivedEventArgs e)
         {
-            Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.WriteLine(e.Data);
-            Console.ForegroundColor = _defaultConsoleColor;
+            _log.Error(e.Data);
         }
 
         internal void BackupCompleted(object sender, BackupCompletedEventArgs args)

@@ -14,6 +14,9 @@
         /// <param name="args"></param>
         public static void Main(string[] args)
         {
+            var settings = Settings.Load();
+            var log = new Log(settings);
+
             PrintTitle();
 
             if (args != null && args.Length < 2)
@@ -22,18 +25,18 @@
 
                 if (!Utils.ValidateServerFiles(rootPath))
                 {
-                    Console.Out.WriteLine("Could not find required server files, downloading latest version.");
+                    log.Info("Could not find required server files, downloading latest version.");
 
-                    ServerDownloader.GetServerFiles(rootPath);
+                    ServerDownloader.GetServerFiles(log, rootPath);
                 }
 
                 if (!Utils.ValidateServerFiles(rootPath))
                 {
-                    PrintUsage(ExitCodes.InvalidServerFiles);
+                    PrintUsage(ExitCodes.InvalidServerFiles, log);
                     Environment.Exit(ExitCodes.InvalidServerFiles);
                 }
 
-                using (var serverProcess = new ServerProcess(rootPath))
+                using (var serverProcess = new ServerProcess(rootPath, log, settings))
                 {
 	                serverProcess.Start();
 
@@ -56,7 +59,7 @@
 		                }
 		                else if (input.Equals("update", StringComparison.OrdinalIgnoreCase))
 		                {
-			                CheckForUpdates(serverProcess, rootPath);
+			                CheckForUpdates(serverProcess, rootPath, log);
 		                }
                         else if (input.Equals("values", StringComparison.OrdinalIgnoreCase))
                         {
@@ -75,7 +78,7 @@
             }
             else
             {
-                PrintUsage(ExitCodes.InvalidNumberOfArguments);
+                PrintUsage(ExitCodes.InvalidNumberOfArguments, log);
                 Environment.Exit(ExitCodes.InvalidNumberOfArguments);
             }
         }
@@ -89,10 +92,10 @@
             Console.WriteLine();
         }
 
-        private static void CheckForUpdates(ServerProcess serverProcess, string rootPath)
+        private static void CheckForUpdates(ServerProcess serverProcess, string rootPath, Log log)
         {
-            Console.Out.WriteLine("Checking for latest Bedrock server version...");
-            var latestVersion = ServerDownloader.FindLatestServerVersion();
+            log.Info("Checking for latest Bedrock server version...");
+            var latestVersion = ServerDownloader.FindLatestServerVersion(log);
 
             if (
                 latestVersion != null && 
@@ -101,25 +104,25 @@
             {
                 if (new Version(serverProcess.ServerValues["ServerVersion"]) < latestVersion)
                 {
-                    Console.Out.WriteLine($"Found new version {latestVersion}, stopping server and updating.");
+                    log.Info($"Found new version {latestVersion}, stopping server and updating.");
                     serverProcess.Stop();
 
-                    ServerDownloader.GetServerFiles(rootPath);
+                    ServerDownloader.GetServerFiles(log, rootPath);
 
                     serverProcess.Start();
                 }
                 else
                 {
-                    Console.Out.WriteLine("Server is up-to-date!");
+                    log.Info("Server is up-to-date!");
                 }
             }
             else
             {
-                Console.Error.WriteLine("Unable to determine status version, update check aborted.");
+                log.Error("Unable to determine status version, update check aborted.");
             }
         }
 
-        private static void PrintUsage(int exitCode)
+        private static void PrintUsage(int exitCode, Log log)
         {
             if (exitCode == ExitCodes.InvalidNumberOfArguments)
             {
@@ -129,7 +132,7 @@
             }
             else if (exitCode == ExitCodes.InvalidServerFiles)
             {
-                Console.WriteLine("Server files broken / missing, please check and retry.");
+                log.Error("Server files broken / missing, please check and retry.");
             }
         }
     }
