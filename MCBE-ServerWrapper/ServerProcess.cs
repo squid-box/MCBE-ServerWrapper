@@ -25,6 +25,8 @@
             ServerDirectory = serverDirectory;
             ServerValues = new Dictionary<string, string>();
 
+            Settings = Settings.Load();
+
             _serverProcess = new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -49,7 +51,7 @@
             }
 
             _inputOutputManager = new InputOutputManager(this);
-            _backupManager = new BackupManager();
+            _backupManager = new BackupManager(Settings);
             _backupManager.BackupCompleted += _inputOutputManager.BackupCompleted;
 
             _inputOutputManager.BackupReady += _backupManager.ManualBackup;
@@ -65,6 +67,11 @@
         /// 
         /// </summary>
         public string ServerDirectory { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public Settings Settings { get; }
 
         /// <summary>
         /// 
@@ -173,48 +180,6 @@
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="name"></param>
-        public void AddUserToWhitelist(string name)
-        {
-            SendInputToProcess($"whitelist add {name}");
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="name"></param>
-        public void RemoveUserFromWhitelist(string name)
-        {
-            SendInputToProcess($"whitelist remove {name}");
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public ICollection<string> GetOnlineUsers()
-        {
-            SendInputToProcess("list");
-            // TODO: Read list of users from StandardOutput.
-
-            return new List<string>();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public ICollection<string> GetWhitelist()
-        {
-            SendInputToProcess("whitelist list");
-            // TODO: Read list of whitelist from StandardOutput.
-
-            return new List<string>();
-        }
-
-        /// <summary>
         /// Dispose all resources.
         /// </summary>
         /// <param name="disposing">Whether or not we're disposing.</param>
@@ -222,6 +187,8 @@
 		{
 			if (disposing)
 			{
+                Settings.Save();
+
 				_inputOutputManager.BackupReady -= _backupManager.ManualBackup;
 				_inputOutputManager.PlayerJoined -= _backupManager.PlayerJoined;
 

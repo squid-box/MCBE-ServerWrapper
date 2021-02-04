@@ -140,7 +140,7 @@
 
             if (e.Data.Contains("Level Name: ") && !_serverProcess.ServerValues.ContainsKey("LevelName"))
             {
-                _serverProcess.ServerValues.Add("LevelName", Regex.Match(e.Data, @".*Level Name: (.*)").Groups[1].Value);
+                _serverProcess.Settings.LevelName = Regex.Match(e.Data, @".*Level Name: (.*)").Groups[1].Value;
             }
 
             if (e.Data.Contains("Version") && !_serverProcess.ServerValues.ContainsKey("ServerVersion"))
@@ -171,7 +171,10 @@
         internal void BackupCompleted(object sender, BackupCompletedEventArgs args)
         {
             _serverProcess.SendInputToProcess("save resume");
-            _serverProcess.Say($"Backup completed: {Path.GetFileName(args.BackupFile)} ({new FileInfo(args.BackupFile).Length/1024/1024}MB), completed in {args.BackupDuration.TotalSeconds}s.");
+
+            _serverProcess.Say(args.Successful
+                ? $"Backup completed: {Path.GetFileName(args.BackupFile)} ({new FileInfo(args.BackupFile).Length / 1024 / 1024}MB), completed in {args.BackupDuration.TotalSeconds}s."
+                : "Backup failed.");
         }
 
         /// <inheritdoc />
