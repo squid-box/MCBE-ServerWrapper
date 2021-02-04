@@ -32,7 +32,7 @@
         /// <param name="message"></param>
         public void Warning(string message)
         {
-            WriteMessage("WARNING", message, ConsoleColor.Yellow);
+            WriteMessage("WARN", message, ConsoleColor.Yellow);
         }
 
         /// <summary>
@@ -41,7 +41,7 @@
         /// <param name="message"></param>
         public void Error(string message)
         {
-            WriteMessage("ERROR", message, ConsoleColor.DarkRed);
+            WriteMessage(" ERR", message, ConsoleColor.DarkRed);
         }
 
         private void WriteMessage(string level, string message, ConsoleColor consoleColor)
