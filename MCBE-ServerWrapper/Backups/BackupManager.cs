@@ -14,15 +14,20 @@
     {
         private readonly Settings _settings;
         private readonly PapyrusCsController _papyrusCsController;
+        private readonly Log _log;
+
         private bool _hasUserBeenOnlineSinceLastBackup;
 
         /// <summary>
         /// Creates a new <see cref="BackupManager"/>.
         /// </summary>
-        public BackupManager(Settings settings)
+        /// <param name="log"></param>
+        /// <param name="settings"></param>
+        public BackupManager(Log log, Settings settings)
         {
+            _log = log;
             _settings = settings;
-            _papyrusCsController = new PapyrusCsController(_settings);
+            _papyrusCsController = new PapyrusCsController(_settings, log);
 
             HasBackupBeenInitiated = false;
             _hasUserBeenOnlineSinceLastBackup = false;
@@ -55,7 +60,7 @@
             }
             else
             {
-                Console.Out.WriteLine("Skipped scheduled backup, no users have been online.");
+                _log.Info("Skipped scheduled backup, no users have been online.");
             }
         }
 
@@ -69,17 +74,18 @@
 
         private void Backup(string arguments, bool manual)
         {
+            _log.Info($"Started {(manual ? "manual" : "scheduled")} backup.");
             var start = DateTime.Now;
             var tmpDir = Path.Combine(_settings.BackupFolder, "tmp");
             
             if (Directory.Exists(tmpDir))
             {
-	            Utils.DeleteDirectory(tmpDir);
+	            Utils.DeleteDirectory(tmpDir, _log);
             }
             
             Directory.CreateDirectory(tmpDir);
 
-            Console.Out.WriteLine("Copying files...");
+            _log.Info("Copying files...");
 
             foreach (var file in arguments.Split(','))
             {
@@ -89,13 +95,13 @@
                     var fileName = Path.Combine("worlds", fileTmp[0]);
                     var fileSize = Convert.ToInt32(fileTmp[1], CultureInfo.InvariantCulture);
 
-                    Console.Out.WriteLine($" - Copying {fileName}...");
+                    _log.Info($" - Copying {fileName}...");
                     Utils.CopyFile(fileName, Path.Combine(tmpDir, fileName), fileSize);
                 }
                 catch (Exception e)
                 {
-                    Console.Error.WriteLine($"Backup failed: {e.GetType()}: {e.Message}");
-                    Utils.DeleteDirectory(tmpDir);
+                    _log.Error($"Backup failed: {e.GetType()}: {e.Message}");
+                    Utils.DeleteDirectory(tmpDir, _log);
                     HasBackupBeenInitiated = false;
 
                     BackupCompleted?.Invoke(this, new BackupCompletedEventArgs(string.Empty, manual, TimeSpan.Zero, false));
@@ -104,13 +110,13 @@
                 }
             }
 
-            Console.Out.WriteLine("Compressing backup...");
+            _log.Info("Compressing backup...");
             var backupName = Path.Combine(_settings.BackupFolder, GetBackupFileName());
             ZipFile.CreateFromDirectory(tmpDir, backupName, CompressionLevel.Optimal, false);
 
             _papyrusCsController.GenerateMap(Path.Combine(tmpDir, "worlds", _settings.LevelName));
 
-            Utils.DeleteDirectory(tmpDir);
+            Utils.DeleteDirectory(tmpDir, _log);
             
             BackupCompleted?.Invoke(this, new BackupCompletedEventArgs(backupName, manual, DateTime.Now - start));
             HasBackupBeenInitiated = false;

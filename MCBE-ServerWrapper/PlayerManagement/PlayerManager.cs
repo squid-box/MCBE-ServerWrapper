@@ -12,12 +12,15 @@
     public class PlayerManager
     {
         private const string PlayerLogFile = @"playerlog.json";
+        private readonly Log _log;
 
         /// <summary>
         /// 
         /// </summary>
-        public PlayerManager()
+        /// <param name="log"></param>
+        public PlayerManager(Log log)
         {
+            _log = log;
             _online = new Dictionary<Player, DateTime>();
             _timeLog = LoadTimeLog();
         }
@@ -39,7 +42,7 @@
         {
             if (_online.ContainsKey(args.Player))
             {
-                Console.Error.WriteLine($"Player \"{args.Player}\" already logged in!");
+                _log.Warning($"Player \"{args.Player}\" already logged in!");
                 _online.Remove(args.Player);
             }
 
@@ -68,7 +71,7 @@
         {
             if (!_online.ContainsKey(args.Player))
             {
-                Console.Error.WriteLine($"Player \"{args.Player}\" was not logged in!");
+                _log.Warning($"Player \"{args.Player}\" was not logged in!");
                 return;
             }
 
@@ -88,16 +91,16 @@
         /// </summary>
         public int UsersOnline => _online.Count;
 
-        private static Dictionary<string, int> LoadTimeLog()
+        private Dictionary<string, int> LoadTimeLog()
         {
             if (File.Exists(PlayerLogFile))
             {
-                Console.Out.WriteLine("Loading player log from file.");
+                _log.Info("Loading player log from file.");
                 return JsonConvert.DeserializeObject<Dictionary<string, int>>(File.ReadAllText(PlayerLogFile));
             }
             else
             {
-                Console.Out.WriteLine("No player log found, creating new.");
+                _log.Info("No player log found, creating new.");
                 return new Dictionary<string, int>();
             }
             

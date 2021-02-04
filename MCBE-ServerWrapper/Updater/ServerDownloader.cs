@@ -12,21 +12,21 @@
     {
         private static readonly Uri ServerDownloadPage = new Uri("https://www.minecraft.net/en-us/download/server/bedrock/");
 
-        public static void GetServerFiles(string rootPath)
+        public static void GetServerFiles(Log log, string rootPath)
         {
             if (Utils.IsLinux())
             {
-                if (!DownloadAndUnpackLinuxServer(rootPath))
+                if (!DownloadAndUnpackLinuxServer(log, rootPath))
                 {
-                    Console.Error.WriteLine("Failed to download server, shutting down.");
+                    log?.Error("Failed to download server, shutting down.");
                     Environment.Exit(ExitCodes.InvalidServerFiles);
                 }
             }
             else
             {
-                if (!DownloadAndUnpackWindowsServer(rootPath))
+                if (!DownloadAndUnpackWindowsServer(log, rootPath))
                 {
-                    Console.Error.WriteLine("Failed to download server, shutting down.");
+                    log?.Error("Failed to download server, shutting down.");
                     Environment.Exit(ExitCodes.InvalidServerFiles);
                 }
             }
@@ -36,53 +36,53 @@
         /// Determines the latest version of the server available for the current system.
         /// </summary>
         /// <returns>The latest version of the server available.</returns>
-        public static Version FindLatestServerVersion()
+        public static Version FindLatestServerVersion(Log log)
         {
-	        return Utils.IsLinux() ? FindLatestLinuxServerVersion() : FindLatestWindowsServerVersion();
+	        return Utils.IsLinux() ? FindLatestLinuxServerVersion(log) : FindLatestWindowsServerVersion(log);
         }
 
-        private static Version FindLatestWindowsServerVersion()
+        private static Version FindLatestWindowsServerVersion(Log log)
         {
-            return FindCurrentVersion(@"https://minecraft.azureedge.net/bin-win/bedrock-server-(.*).zip");
+            return FindCurrentVersion(log, @"https://minecraft.azureedge.net/bin-win/bedrock-server-(.*).zip");
         }
-        private static Version FindLatestLinuxServerVersion()
+        private static Version FindLatestLinuxServerVersion(Log log)
         {
-            return FindCurrentVersion(@"https://minecraft.azureedge.net/bin-linux/bedrock-server-(.*).zip");
+            return FindCurrentVersion(log, @"https://minecraft.azureedge.net/bin-linux/bedrock-server-(.*).zip");
         }
 
-        private static bool DownloadAndUnpackWindowsServer(string targetDirectory)
+        private static bool DownloadAndUnpackWindowsServer(Log log, string targetDirectory)
         {
-            Console.Out.WriteLine("Attempting to download Windows server files...");
+            log?.Info("Attempting to download Windows server files...");
 
             try
             {
                 var serverZip = FindDownloadUrl(@"(https://minecraft.azureedge.net/bin-win/bedrock-server-.*.zip)");
-                return DownloadAndUnzipPackage(serverZip, targetDirectory);
+                return DownloadAndUnzipPackage(log, serverZip, targetDirectory);
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine($"Couldn't get latest Windows server: {e.GetType()} : {e.Message}");
+                log?.Error($"Couldn't get latest Windows server: {e.GetType()} : {e.Message}");
                 return false;
             }
         }
 
-        private static bool DownloadAndUnpackLinuxServer(string targetDirectory)
+        private static bool DownloadAndUnpackLinuxServer(Log log, string targetDirectory)
         {
-            Console.Out.WriteLine("Attempting to download Linux server files...");
+            log?.Info("Attempting to download Linux server files...");
 
             try
             {
                 var serverZip = FindDownloadUrl(@"(https://minecraft.azureedge.net/bin-linux/bedrock-server-.*.zip)");
-                return DownloadAndUnzipPackage(serverZip, targetDirectory);
+                return DownloadAndUnzipPackage(log, serverZip, targetDirectory);
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine($"Couldn't get latest Linux server: {e.GetType()} : {e.Message}");
+                log?.Error($"Couldn't get latest Linux server: {e.GetType()} : {e.Message}");
                 return false;
             }
         }
 
-        private static Version FindCurrentVersion(string regexPattern)
+        private static Version FindCurrentVersion(Log log, string regexPattern)
         {
             try
             {
@@ -94,12 +94,12 @@
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine($"Couldn't determine latest server version:\n{e.GetType()} : {e.Message}");
+                log?.Error($"Couldn't determine latest server version:\n{e.GetType()} : {e.Message}");
                 return null;
             }
         }
 
-        private static bool DownloadAndUnzipPackage(Uri packageUrl, string targetDirectory)
+        private static bool DownloadAndUnzipPackage(Log log, Uri packageUrl, string targetDirectory)
         {
             var protectedFiles = new[]
             {
@@ -124,18 +124,18 @@
 
                     while (!done)
                     {
-                        Console.Out.WriteLine($"Progress: {lastProgress}%");
+                        log?.Info($"Progress: {lastProgress}%");
                         Thread.Sleep(1000);
                     }
 
-                    Console.Out.WriteLine("Download complete.");
+                    log?.Info("Download complete.");
 
                     Directory.CreateDirectory(targetDirectory);
                     Directory.CreateDirectory(tempBackupDir);
 
                     using (var zip = ZipFile.OpenRead(filename))
                     {
-                        Console.Out.WriteLine($"Unzipping {zip.Entries.Count} files...");
+                        log?.Info($"Unzipping {zip.Entries.Count} files...");
 
                         foreach (var entry in zip.Entries)
                         {
@@ -158,7 +158,7 @@
                         }
                     }
 
-                    Console.Out.WriteLine("Unzip complete.");
+                    log?.Info("Unzip complete.");
 
                     Directory.Delete(tempBackupDir, true);
 
@@ -167,7 +167,7 @@
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine($"Couldn't get file \"{packageUrl}\": {e.GetType()} : {e.Message}");
+                log?.Error($"Couldn't get file \"{packageUrl}\": {e.GetType()} : {e.Message}");
                 return false;
             }
         }

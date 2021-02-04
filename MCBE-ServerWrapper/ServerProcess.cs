@@ -15,17 +15,22 @@
         private readonly Process _serverProcess;
         private readonly InputOutputManager _inputOutputManager;
         private readonly BackupManager _backupManager;
+        private readonly Log _log;
+        private readonly Settings _settings;
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="serverDirectory"></param>
-		public ServerProcess(string serverDirectory)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="serverDirectory"></param>
+        /// <param name="log"></param>
+        /// <param name="settings"></param>
+        public ServerProcess(string serverDirectory, Log log, Settings settings)
         {
             ServerDirectory = serverDirectory;
             ServerValues = new Dictionary<string, string>();
 
-            Settings = Settings.Load();
+            _settings = settings;
+            _log = log;
 
             _serverProcess = new Process
             {
@@ -50,8 +55,8 @@
                 _serverProcess.StartInfo.FileName = "bedrock_server.exe";
             }
 
-            _inputOutputManager = new InputOutputManager(this);
-            _backupManager = new BackupManager(Settings);
+            _inputOutputManager = new InputOutputManager(log, settings, this);
+            _backupManager = new BackupManager(log, _settings);
             _backupManager.BackupCompleted += _inputOutputManager.BackupCompleted;
 
             _inputOutputManager.BackupReady += _backupManager.ManualBackup;
@@ -67,11 +72,6 @@
         /// 
         /// </summary>
         public string ServerDirectory { get; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public Settings Settings { get; }
 
         /// <summary>
         /// 
@@ -153,13 +153,13 @@
         public void Stop()
         {
             SendInputToProcess("stop");
-            Console.WriteLine("Shutting down server...");
+            _log.Info("Shutting down server...");
 
             _serverProcess.WaitForExit(5000);
 
             if (!_serverProcess.HasExited)
             {
-                Console.Error.WriteLine("Could not exit server process. Killing.");
+                _log.Error("Could not exit server process. Killing.");
                 _serverProcess.Kill();
             }
 
@@ -171,11 +171,11 @@
 
         public void PrintServerValues()
         {
-            Console.Out.WriteLine("Server values:");
+            _log.Info("Server values:");
 
             foreach (var serverValue in ServerValues)
             {
-                Console.Out.WriteLine($" * {serverValue.Key} : {serverValue.Value}");
+                _log.Info($" * {serverValue.Key} : {serverValue.Value}");
             }
         }
 
@@ -187,7 +187,7 @@
 		{
 			if (disposing)
 			{
-                Settings.Save();
+                _settings.Save();
 
 				_inputOutputManager.BackupReady -= _backupManager.ManualBackup;
 				_inputOutputManager.PlayerJoined -= _backupManager.PlayerJoined;
