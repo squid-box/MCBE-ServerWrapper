@@ -17,28 +17,16 @@
             _originalConsoleColor = Console.ForegroundColor;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="message"></param>
         public void Info(string message)
         {
             WriteMessage("INFO", message, _originalConsoleColor);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="message"></param>
         public void Warning(string message)
         {
             WriteMessage("WARN", message, ConsoleColor.Yellow);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="message"></param>
         public void Error(string message)
         {
             WriteMessage(" ERR", message, ConsoleColor.DarkRed);
@@ -46,6 +34,11 @@
 
         private void WriteMessage(string level, string message, ConsoleColor consoleColor)
         {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return;
+            }
+
             var formattedMessage = $"|{level}|{DateTime.Now:yyyy-MM-dd HH:mm:ss}|{message}";
 
             Console.ForegroundColor = consoleColor;

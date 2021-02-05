@@ -5,11 +5,8 @@
     using System.Diagnostics;
     using System.Threading;
 
-    using Backups;
+    using BedrockServerWrapper.Backups;
 
-    /// <summary>
-    /// 
-    /// </summary>
     public class ServerProcess : IDisposable
     {
         private readonly Process _serverProcess;
@@ -18,12 +15,6 @@
         private readonly Log _log;
         private readonly Settings _settings;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="serverDirectory"></param>
-        /// <param name="log"></param>
-        /// <param name="settings"></param>
         public ServerProcess(string serverDirectory, Log log, Settings settings)
         {
             ServerDirectory = serverDirectory;
@@ -68,14 +59,8 @@
         /// </summary>
         public Dictionary<string, string> ServerValues { get; }
 
-        /// <summary>
-        /// 
-        /// </summary>
         public string ServerDirectory { get; }
 
-        /// <summary>
-        /// 
-        /// </summary>
         public bool IsRunning
         {
             get
@@ -97,10 +82,6 @@
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="input"></param>
         public void SendInputToProcess(string input)
         {
             if (IsRunning)
@@ -109,10 +90,6 @@
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="message"></param>
         public void Say(string message)
         {
             SendInputToProcess($"say {message}");
@@ -127,9 +104,6 @@
             SendInputToProcess("save hold");
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         public void Start()
         {
             _serverProcess.Start();
@@ -147,9 +121,6 @@
             _serverProcess.StandardInput.AutoFlush = true;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         public void Stop()
         {
             SendInputToProcess("stop");
