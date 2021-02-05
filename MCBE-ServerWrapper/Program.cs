@@ -1,7 +1,7 @@
 ﻿namespace BedrockServerWrapper
 {
     using System;
-    using Updater;
+    using BedrockServerWrapper.Updater;
 
     /// <summary>
     /// 

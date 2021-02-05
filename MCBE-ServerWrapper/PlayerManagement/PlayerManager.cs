@@ -7,11 +7,12 @@
     using Newtonsoft.Json;
 
     /// <summary>
-    /// 
+    /// Manages player activity.
     /// </summary>
     public class PlayerManager
     {
-        private const string PlayerLogFile = @"playerlog.json";
+        private const string PlayerTimeLogFile = @"playertime.json";
+        private const string PlayerSeenLogFile = @"playerseen.json";
         private readonly Log _log;
 
         /// <summary>
@@ -23,12 +24,15 @@
             _log = log;
             _online = new Dictionary<Player, DateTime>();
             _timeLog = LoadTimeLog();
+            _lastSeenLog = LoadSeenLog();
         }
 
         /// <summary>
         /// Collection of currently online <see cref="Player"/> and when they logged in.
         /// </summary>
         private readonly Dictionary<Player, DateTime> _online;
+
+        private readonly Dictionary<string, DateTime> _lastSeenLog;
 
         /// <summary>
         /// Log of how many minutes <see cref="Player"/>s have played so far.
@@ -64,6 +68,16 @@
             return _timeLog[player.Name];
         }
 
+        internal DateTime GetLastSeen(Player player)
+        {
+            if (!_lastSeenLog.ContainsKey(player.Name))
+            {
+                return DateTime.MinValue;
+            }
+
+            return _lastSeenLog[player.Name];
+        }
+
         /// <summary>
         /// Called when a <see cref="Player"/> logs out.
         /// </summary>
@@ -80,10 +94,13 @@
                 _timeLog.Add(args.Player.Name, 0);
             }
 
+            _lastSeenLog[args.Player.Name] = DateTime.Now;
+
             _timeLog[args.Player.Name] += Convert.ToInt32(Math.Ceiling((DateTime.UtcNow - _online[args.Player]).TotalMinutes));
             _online.Remove(args.Player);
 
             SaveTimeLog();
+            SaveSeenLog();
         }
 
         /// <summary>
@@ -93,22 +110,36 @@
 
         private Dictionary<string, int> LoadTimeLog()
         {
-            if (File.Exists(PlayerLogFile))
+            if (File.Exists(PlayerTimeLogFile))
             {
-                _log.Info("Loading player log from file.");
-                return JsonConvert.DeserializeObject<Dictionary<string, int>>(File.ReadAllText(PlayerLogFile));
+                _log.Info("Loading player time log from file.");
+                return JsonConvert.DeserializeObject<Dictionary<string, int>>(File.ReadAllText(PlayerTimeLogFile));
             }
-            else
+
+            _log.Info("No player time log found, creating new.");
+            return new Dictionary<string, int>();
+        }
+
+        private Dictionary<string, DateTime> LoadSeenLog()
+        {
+            if (File.Exists(PlayerSeenLogFile))
             {
-                _log.Info("No player log found, creating new.");
-                return new Dictionary<string, int>();
+                _log.Info("Loading player seen log from file.");
+                return JsonConvert.DeserializeObject<Dictionary<string, DateTime>>(File.ReadAllText(PlayerSeenLogFile));
             }
-            
+
+            _log.Info("No player seen log found, creating new.");
+            return new Dictionary<string, DateTime>();
         }
 
         private void SaveTimeLog()
         {
-            File.WriteAllText(PlayerLogFile, JsonConvert.SerializeObject(_timeLog));
+            File.WriteAllText(PlayerTimeLogFile, JsonConvert.SerializeObject(_timeLog));
+        }
+
+        private void SaveSeenLog()
+        {
+            File.WriteAllText(PlayerSeenLogFile, JsonConvert.SerializeObject(_lastSeenLog));
         }
     }
 }

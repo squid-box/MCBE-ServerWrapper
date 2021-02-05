@@ -6,8 +6,8 @@
     using System.Text.RegularExpressions;
     using System.Threading;
 
-    using Backups;
-    using PlayerManagement;
+    using BedrockServerWrapper.Backups;
+    using BedrockServerWrapper.PlayerManagement;
 
     /// <summary>
     /// 
@@ -117,7 +117,7 @@
 
                     _serverProcess.Say(timePlayed == -1
                         ? $"Welcome {player}!"
-                        : $"Welcome back {player}, you've played {Utils.TimePlayedConversion(timePlayed)} so far.");
+                        : $"Welcome back {player}, you've played {Utils.TimePlayedConversion(timePlayed)}, we last saw you {_playerManager.GetLastSeen(player):yyyy-MM-dd}.");
                 });
                 thread.Start();
             }
