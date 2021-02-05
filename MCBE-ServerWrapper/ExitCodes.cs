@@ -1,4 +1,4 @@
-﻿namespace BedrockServerWrapper
+﻿namespace AhlSoft.BedrockServerWrapper
 {
     /// <summary>
     /// Possible exit codes.

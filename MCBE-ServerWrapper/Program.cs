@@ -1,7 +1,8 @@
-﻿namespace BedrockServerWrapper
+﻿namespace AhlSoft.BedrockServerWrapper
 {
     using System;
-    using BedrockServerWrapper.Updater;
+
+    using AhlSoft.BedrockServerWrapper.Updater;
 
     /// <summary>
     /// 

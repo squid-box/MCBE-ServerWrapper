@@ -1,4 +1,4 @@
-﻿namespace BedrockServerWrapper.Backups
+﻿namespace AhlSoft.BedrockServerWrapper.Backups
 {
     using System;
 

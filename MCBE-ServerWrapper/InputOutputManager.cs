@@ -1,4 +1,4 @@
-﻿namespace BedrockServerWrapper
+﻿namespace AhlSoft.BedrockServerWrapper
 {
     using System;
     using System.Diagnostics;
@@ -6,8 +6,8 @@
     using System.Text.RegularExpressions;
     using System.Threading;
 
-    using BedrockServerWrapper.Backups;
-    using BedrockServerWrapper.PlayerManagement;
+    using AhlSoft.BedrockServerWrapper.Backups;
+    using AhlSoft.BedrockServerWrapper.PlayerManagement;
 
     /// <summary>
     /// 

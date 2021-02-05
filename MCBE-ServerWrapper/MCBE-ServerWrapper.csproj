@@ -1,28 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <ActualVersion>0.4.0.0</ActualVersion>
+    <ActualVersion>0.4.1.0</ActualVersion>
   </PropertyGroup>
   <PropertyGroup>
     <ProjectGuid>{A03B0023-D14F-454B-BBD9-E8CECB76A769}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>BedrockServerWrapper</RootNamespace>
+    <RootNamespace>AhlSoft.BedrockServerWrapper</RootNamespace>
     <AssemblyName>MCBSW</AssemblyName>
     <AssemblyTitle>Minecraft Bedrock Edition Server Wrapper</AssemblyTitle>
     <Product>Minecraft Bedrock Edition Server Wrapper</Product>
-    <Copyright>Copyright © Joel Ahlgren 2020</Copyright>
+    <Copyright>Copyright © AhlSoft 2021</Copyright>
     <AssemblyVersion>$(ActualVersion)</AssemblyVersion>
     <FileVersion>$(ActualVersion)</FileVersion>
     <Version>$(ActualVersion)</Version>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <ApplicationIcon>logo.ico</ApplicationIcon>
-    <StartupObject>BedrockServerWrapper.Program</StartupObject>
+    <StartupObject>AhlSoft.BedrockServerWrapper.Program</StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <PostBuildEvent>$(ILMergeConsolePath) /wildcards /ndebug /out:MCBSW.exe MCBSW.exe *.dll</PostBuildEvent>
   </PropertyGroup>

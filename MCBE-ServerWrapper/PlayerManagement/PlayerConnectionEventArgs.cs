@@ -1,4 +1,4 @@
-﻿namespace BedrockServerWrapper.PlayerManagement
+﻿namespace AhlSoft.BedrockServerWrapper.PlayerManagement
 {
     using System;
 
