@@ -1,4 +1,4 @@
-﻿namespace BedrockServerWrapper
+﻿namespace AhlSoft.BedrockServerWrapper
 {
     using System;
     using System.IO;

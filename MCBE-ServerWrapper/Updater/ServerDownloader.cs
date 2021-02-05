@@ -1,4 +1,4 @@
-﻿namespace BedrockServerWrapper.Updater
+﻿namespace AhlSoft.BedrockServerWrapper.Updater
 {
     using System;
     using System.IO;
@@ -8,6 +8,9 @@
     using System.Text.RegularExpressions;
     using System.Threading;
 
+    /// <summary>
+    /// 
+    /// </summary>
     public static class ServerDownloader
     {
         private static readonly Uri ServerDownloadPage = new Uri("https://www.minecraft.net/en-us/download/server/bedrock/");

@@ -1,11 +1,11 @@
-﻿namespace BedrockServerWrapper
+﻿namespace AhlSoft.BedrockServerWrapper
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Threading;
 
-    using BedrockServerWrapper.Backups;
+    using AhlSoft.BedrockServerWrapper.Backups;
 
     public class ServerProcess : IDisposable
     {

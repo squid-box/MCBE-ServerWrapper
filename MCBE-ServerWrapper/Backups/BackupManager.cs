@@ -1,11 +1,11 @@
-﻿namespace BedrockServerWrapper.Backups
+﻿namespace AhlSoft.BedrockServerWrapper.Backups
 {
     using System;
     using System.Globalization;
     using System.IO;
     using System.IO.Compression;
 
-    using PlayerManagement;
+    using AhlSoft.BedrockServerWrapper.PlayerManagement;
 
     /// <summary>
     /// Manages server backups.
