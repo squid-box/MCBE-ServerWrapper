@@ -5,7 +5,6 @@
     using System.Diagnostics;
     using System.IO;
     using System.Linq;
-    using System.Reflection;
 
     /// <summary>
     /// General utilities.
@@ -54,7 +53,7 @@
         /// <summary>
         /// Gets the version of this program.
         /// </summary>
-        public static string ProgramVersion => FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
+        public static string ProgramVersion => FileVersionInfo.GetVersionInfo(Environment.GetCommandLineArgs()[0]).FileVersion;
 
         public static bool DeleteDirectory(string dir, Log log)
         {
