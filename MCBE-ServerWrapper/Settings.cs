@@ -52,6 +52,8 @@
         /// </summary>
         public string LogFilePath { get; set; }
 
+        public string ServerFolder { get; set; }
+
         private Settings()
         {
             // Empty constructor to block public constructor.
@@ -92,6 +94,7 @@
             AutomaticUpdatesEnabled = false;
             AutomaticBackupFrequency = 12;
 
+            ServerFolder = "Server";
             BackupFolder = "Backups";
             PapyrusCsFolder = "PapyrusCs";
             PapyrusOutputFolder = Path.Combine(PapyrusCsFolder, "GeneratedMap");

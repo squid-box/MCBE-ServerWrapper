@@ -16,6 +16,8 @@
         private readonly PapyrusCsController _papyrusCsController;
         private readonly Log _log;
 
+        private readonly string _serverRoot;
+
         private bool _hasUserBeenOnlineSinceLastBackup;
 
         /// <summary>
@@ -23,11 +25,12 @@
         /// </summary>
         /// <param name="log"></param>
         /// <param name="settings"></param>
-        public BackupManager(Log log, Settings settings)
+        public BackupManager(Log log, Settings settings, string serverRoot)
         {
             _log = log;
             _settings = settings;
             _papyrusCsController = new PapyrusCsController(_settings, log);
+            _serverRoot = serverRoot;
 
             HasBackupBeenInitiated = false;
             _hasUserBeenOnlineSinceLastBackup = false;
@@ -76,7 +79,7 @@
         {
             _log.Info($"Started {(manual ? "manual" : "scheduled")} backup.");
             var start = DateTime.Now;
-            var tmpDir = Path.Combine(_settings.BackupFolder, "tmp");
+            var tmpDir = Path.Combine(Path.GetTempPath(), "mcbesw_backup");
             
             if (Directory.Exists(tmpDir))
             {
@@ -92,7 +95,7 @@
                 try
                 {
                     var fileTmp = file.Trim().Split(':');
-                    var fileName = Path.Combine("worlds", fileTmp[0]);
+                    var fileName = Path.Combine(_serverRoot, "worlds", fileTmp[0]);
                     var fileSize = Convert.ToInt32(fileTmp[1], CultureInfo.InvariantCulture);
 
                     _log.Info($" - Copying {fileName}...");
@@ -114,7 +117,7 @@
             var backupName = Path.Combine(_settings.BackupFolder, GetBackupFileName());
             ZipFile.CreateFromDirectory(tmpDir, backupName, CompressionLevel.Optimal, false);
 
-            _papyrusCsController.GenerateMap(Path.Combine(tmpDir, "worlds", _settings.LevelName));
+            _papyrusCsController.GenerateMap(Path.Combine(tmpDir, _settings.ServerFolder, "worlds", _settings.LevelName));
 
             Utils.DeleteDirectory(tmpDir, _log);
             
