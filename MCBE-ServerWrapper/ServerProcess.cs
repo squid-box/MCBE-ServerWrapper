@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.IO;
     using System.Threading;
 
     using AhlSoft.BedrockServerWrapper.Backups;
@@ -38,16 +39,16 @@
 
             if (Utils.IsLinux())
             {
-                _serverProcess.StartInfo.FileName = "bedrock_server";
-                _serverProcess.StartInfo.EnvironmentVariables.Add("LD_LIBRARY_PATH", ".");
+                _serverProcess.StartInfo.FileName = Path.Combine(serverDirectory, "bedrock_server");
+                _serverProcess.StartInfo.EnvironmentVariables.Add("LD_LIBRARY_PATH", serverDirectory);
             }
             else
             {
-                _serverProcess.StartInfo.FileName = "bedrock_server.exe";
+                _serverProcess.StartInfo.FileName = Path.Combine(serverDirectory, "bedrock_server.exe");
             }
 
             _inputOutputManager = new InputOutputManager(log, settings, this);
-            _backupManager = new BackupManager(log, _settings);
+            _backupManager = new BackupManager(log, _settings, serverDirectory);
             _backupManager.BackupCompleted += _inputOutputManager.BackupCompleted;
 
             _inputOutputManager.BackupReady += _backupManager.ManualBackup;

@@ -1,7 +1,7 @@
 ﻿namespace AhlSoft.BedrockServerWrapper
 {
     using System;
-
+    using System.IO;
     using AhlSoft.BedrockServerWrapper.Updater;
 
     /// <summary>
@@ -24,20 +24,22 @@
             {
                 var rootPath = args.Length == 0 ? "." : args[0];
 
-                if (!Utils.ValidateServerFiles(rootPath))
+                var serverFolder = Path.Combine(rootPath, settings.ServerFolder);
+
+                if (!Utils.ValidateServerFiles(serverFolder))
                 {
                     log.Info("Could not find required server files, downloading latest version.");
 
-                    ServerDownloader.GetServerFiles(log, rootPath);
+                    ServerDownloader.GetServerFiles(log, serverFolder);
                 }
 
-                if (!Utils.ValidateServerFiles(rootPath))
+                if (!Utils.ValidateServerFiles(serverFolder))
                 {
                     PrintUsage(ExitCodes.InvalidServerFiles, log);
                     Environment.Exit(ExitCodes.InvalidServerFiles);
                 }
 
-                using (var serverProcess = new ServerProcess(rootPath, log, settings))
+                using (var serverProcess = new ServerProcess(serverFolder, log, settings))
                 {
 	                serverProcess.Start();
 
@@ -54,23 +56,24 @@
 		                {
 			                break;
 		                }
-		                else if (input.Equals("backup", StringComparison.OrdinalIgnoreCase))
-		                {
+
+                        if (input.Equals("backup", StringComparison.OrdinalIgnoreCase))
+                        {
                             serverProcess.Backup();
-		                }
-		                else if (input.Equals("update", StringComparison.OrdinalIgnoreCase))
-		                {
-			                CheckForUpdates(serverProcess, rootPath, log);
-		                }
+                        }
+                        else if (input.Equals("update", StringComparison.OrdinalIgnoreCase))
+                        {
+                            CheckForUpdates(serverProcess, serverFolder, log);
+                        }
                         else if (input.Equals("values", StringComparison.OrdinalIgnoreCase))
                         {
                             serverProcess.PrintServerValues();
                         }
-		                else
-		                {
-			                serverProcess.SendInputToProcess(input);
-		                }
-	                }
+                        else
+                        {
+                            serverProcess.SendInputToProcess(input);
+                        }
+                    }
 
 	                serverProcess.Stop();
                 }
