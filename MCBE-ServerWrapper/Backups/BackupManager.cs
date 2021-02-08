@@ -13,7 +13,7 @@
     public class BackupManager
     {
         private readonly Settings _settings;
-        private readonly PapyrusCsController _papyrusCsController;
+        private readonly PapyrusCsManager _papyrusCsManager;
         private readonly Log _log;
 
         private readonly string _serverRoot;
@@ -25,11 +25,12 @@
         /// </summary>
         /// <param name="log"></param>
         /// <param name="settings"></param>
+        /// <param name="serverRoot"></param>
         public BackupManager(Log log, Settings settings, string serverRoot)
         {
             _log = log;
             _settings = settings;
-            _papyrusCsController = new PapyrusCsController(_settings, log);
+            _papyrusCsManager = new PapyrusCsManager(_settings, log);
             _serverRoot = serverRoot;
 
             HasBackupBeenInitiated = false;
@@ -117,10 +118,8 @@
             var backupName = Path.Combine(_settings.BackupFolder, GetBackupFileName());
             ZipFile.CreateFromDirectory(tmpDir, backupName, CompressionLevel.Optimal, false);
 
-            _papyrusCsController.GenerateMap(Path.Combine(tmpDir, _settings.ServerFolder, "worlds", _settings.LevelName));
+            _papyrusCsManager.GenerateMap(tmpDir);
 
-            Utils.DeleteDirectory(tmpDir, _log);
-            
             BackupCompleted?.Invoke(this, new BackupCompletedEventArgs(backupName, manual, DateTime.Now - start));
             HasBackupBeenInitiated = false;
         }
