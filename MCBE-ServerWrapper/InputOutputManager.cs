@@ -27,26 +27,21 @@
         /// </summary>
         public event EventHandler<BackupReadyEventArgs> BackupReady;
 
-        public event EventHandler<PlayerConnectionEventArgs> PlayerJoined;
-
-        public event EventHandler<PlayerConnectionEventArgs> PlayerDisconnected;
-
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="settings"></param>
         /// <param name="serverProcess"></param>
         /// <param name="log"></param>
-        public InputOutputManager(Log log, Settings settings, ServerProcess serverProcess)
+        /// <param name="playerManager"></param>
+        public InputOutputManager(Log log, Settings settings, ServerProcess serverProcess, PlayerManager playerManager)
         {
             _log = log;
             _settings = settings;
             _serverProcess = serverProcess;
-            _playerManager = new PlayerManager(log);
+            _playerManager = playerManager;
             _serverStarting = DateTime.MinValue;
             _cancellationTokenSource = new CancellationTokenSource();
-
-            PlayerJoined += _playerManager.PlayerConnected;
-            PlayerDisconnected += _playerManager.PlayerDisconnected;
         }
 
         internal void ReceivedStandardOutput(object sender, DataReceivedEventArgs e)
@@ -107,7 +102,7 @@
             {
                 var playerData = Regex.Match(e.Data, @".* Player connected: (.*), xuid: (.*)");
                 var player = new Player(playerData.Groups[1].Value, playerData.Groups[2].Value);
-                PlayerJoined?.Invoke(this, new PlayerConnectionEventArgs(player));
+                _playerManager.PlayerJoined(player);
                 
                 var timePlayed = _playerManager.GetPlayedMinutes(player);
 
@@ -126,7 +121,7 @@
             {
                 var playerData = Regex.Match(e.Data, @".* Player disconnected: (.*), xuid: (.*)");
                 var player = new Player(playerData.Groups[1].Value, playerData.Groups[2].Value);
-                PlayerDisconnected?.Invoke(this, new PlayerConnectionEventArgs(player));
+                _playerManager.PlayerLeft(player);
                 
                 _serverProcess.Say($"Goodbye {player}!");
             }

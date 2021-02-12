@@ -28,6 +28,16 @@
         }
 
         /// <summary>
+        /// Invoked whenever a player joins the game.
+        /// </summary>
+        public event EventHandler<PlayerConnectionEventArgs> PlayerConnected;
+
+        /// <summary>
+        /// Invoked whenever a player joins the game.
+        /// </summary>
+        public event EventHandler<PlayerConnectionEventArgs> PlayerDisconnected;
+
+        /// <summary>
         /// Collection of currently online <see cref="Player"/> and when they logged in.
         /// </summary>
         private readonly Dictionary<Player, DateTime> _online;
@@ -38,20 +48,6 @@
         /// Log of how many minutes <see cref="Player"/>s have played so far.
         /// </summary>
         private readonly Dictionary<string, int> _timeLog;
-
-        /// <summary>
-        /// Called when a <see cref="Player"/> logs in.
-        /// </summary>
-        internal void PlayerConnected(object sender, PlayerConnectionEventArgs args)
-        {
-            if (_online.ContainsKey(args.Player))
-            {
-                _log.Warning($"Player \"{args.Player}\" already logged in!");
-                _online.Remove(args.Player);
-            }
-
-            _online.Add(args.Player, DateTime.UtcNow);
-        }
 
         /// <summary>
         /// Gets number of minutes a <see cref="Player"/> has spent on this server.
@@ -81,26 +77,44 @@
         /// <summary>
         /// Called when a <see cref="Player"/> logs out.
         /// </summary>
-        internal void PlayerDisconnected(object sender, PlayerConnectionEventArgs args)
+        internal void PlayerLeft(Player player)
         {
-            if (!_online.ContainsKey(args.Player))
+            if (!_online.ContainsKey(player))
             {
-                _log.Warning($"Player \"{args.Player}\" was not logged in!");
+                _log.Warning($"Player \"{player}\" was not logged in!");
                 return;
             }
 
-            if (!_timeLog.ContainsKey(args.Player.Name))
+            PlayerDisconnected?.Invoke(this, new PlayerConnectionEventArgs(player));
+
+            if (!_timeLog.ContainsKey(player.Name))
             {
-                _timeLog.Add(args.Player.Name, 0);
+                _timeLog.Add(player.Name, 0);
             }
 
-            _lastSeenLog[args.Player.Name] = DateTime.Now;
+            _lastSeenLog[player.Name] = DateTime.Now;
 
-            _timeLog[args.Player.Name] += Convert.ToInt32(Math.Ceiling((DateTime.UtcNow - _online[args.Player]).TotalMinutes));
-            _online.Remove(args.Player);
+            _timeLog[player.Name] += Convert.ToInt32(Math.Ceiling((DateTime.UtcNow - _online[player]).TotalMinutes));
+            _online.Remove(player);
 
             SaveTimeLog();
             SaveSeenLog();
+        }
+
+        /// <summary>
+        /// Called when a <see cref="Player"/> logs in.
+        /// </summary>
+        internal void PlayerJoined(Player player)
+        {
+            if (_online.ContainsKey(player))
+            {
+                _log.Warning($"Player \"{player}\" already logged in!");
+                _online.Remove(player);
+            }
+
+            _online.Add(player, DateTime.UtcNow);
+
+            PlayerConnected?.Invoke(this, new PlayerConnectionEventArgs(player));
         }
 
         /// <summary>

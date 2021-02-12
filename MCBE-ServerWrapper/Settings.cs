@@ -91,8 +91,8 @@
         /// </summary>
         public void Reset()
         {
-            AutomaticUpdatesEnabled = false;
-            AutomaticBackupFrequency = 12;
+            AutomaticUpdatesEnabled = true;
+            AutomaticBackupFrequency = 60;
 
             ServerFolder = "Server";
             BackupFolder = "Backups";

@@ -6,13 +6,14 @@
     using System.IO.Compression;
     using System.Net;
     using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
 
-    public class PapyrusCsController
+    public class PapyrusCsManager
     {
         private readonly Settings _settings;
         private readonly Log _log;
 
-        public PapyrusCsController(Settings settings, Log log)
+        public PapyrusCsManager(Settings settings, Log log)
         {
             _settings = settings;
             _log = log;
@@ -26,82 +27,98 @@
         /// 
         /// </summary>
         /// <remarks>Ensure the world is not loaded/locked when generating map.</remarks>
-        public void GenerateMap(string worldFolder)
+        public void GenerateMap(string tempFolder)
         {
-            _log.Info("Map generation starting.");
-
-            if (!Directory.Exists(worldFolder))
+            Task.Run(() =>
             {
-                _log.Error("World folder could not be found.");
-                return;
-            }
+                _log.Info("Map generation starting.");
 
-            if (!IsPapyrusCsAvailable)
-            {
+                var worldFolder = Path.Combine(tempFolder, _settings.ServerFolder, "worlds", _settings.LevelName);
+
+                if (!Directory.Exists(worldFolder))
+                {
+                    _log.Error("World folder could not be found.");
+                    return;
+                }
+
+                if (!IsPapyrusCsAvailable)
+                {
+                    try
+                    {
+                        InstallPapyrusCs();
+                    }
+                    catch (Exception e)
+                    {
+                        _log.Error($"Could not install Papyrus. Exception: {e.GetType()}: {e.Message}");
+                        return;
+                    }
+                }
+
+                GenerateDimensionMap(worldFolder, 0);
+                GenerateDimensionMap(worldFolder, 1);
+                GenerateDimensionMap(worldFolder, 2);
+
+                _log.Info("Map generation done.");
+
+                _log.Info("Deleting temporary backup files.");
+
                 try
                 {
-                    InstallPapyrusCs();
+                    Directory.Delete(tempFolder, true);
                 }
                 catch (Exception e)
                 {
-                    _log.Error($"Could not install Papyrus. Exception: {e.GetType()}: {e.Message}");
-                    return;
+                    _log.Error($"Couldn't delete files. {e.GetType()}: {e.Message}");
                 }
-            }
 
-            GenerateDimensionMap(worldFolder, 0);
-            GenerateDimensionMap(worldFolder, 1);
-            GenerateDimensionMap(worldFolder, 2);
-
-            _log.Info("Map generation done.");
-            
-            if (!string.IsNullOrEmpty(_settings.PapyrusPostRunCommand))
-            {
-                using (var process = new Process())
+                if (!string.IsNullOrEmpty(_settings.PapyrusPostRunCommand))
                 {
-                    process.StartInfo = new ProcessStartInfo
+                    using var process = new Process
                     {
-                        FileName = Utils.IsLinux() ? "/bin/bash" : "cmd.exe",
-                        Arguments = $"{(Utils.IsLinux() ? "-c" : "/C")} \"{_settings.PapyrusPostRunCommand}\"",
-                        UseShellExecute = false,
-                        CreateNoWindow = true
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = Utils.IsLinux() ? "/bin/bash" : "cmd.exe",
+                            Arguments = $"{(Utils.IsLinux() ? "-c" : "/C")} \"{_settings.PapyrusPostRunCommand}\"",
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        }
                     };
 
                     process.Start();
                     process.WaitForExit();
 
-                    _log.Info($"PostRunCommand executed with {process.ExitCode}.");
+                    _log.Info($"Map generation PostRunCommand executed with {process.ExitCode}.");
                 }
-            }
+            });
         }
 
         private void GenerateDimensionMap(string worldFolder, int dimension)
         {
             _log.Info($"Generating map for dimension {dimension}.");
 
-            using (var process = new Process())
+            using var process = new Process
             {
-                process.StartInfo = new ProcessStartInfo
+                StartInfo = new ProcessStartInfo
                 {
                     FileName = PapyrusCsExecutable,
                     Arguments = $"-w \"{worldFolder}\" -o \"{_settings.PapyrusOutputFolder}\" --dim {dimension} --htmlfile index.html",
                     UseShellExecute = false,
                     CreateNoWindow = true
-                };
-                
-                process.Start();
-                process.WaitForExit();
+                }
+            };
 
-                if (process.ExitCode != 0)
+            process.Start();
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                if (process.ExitCode == -532462766)
                 {
-                    if (process.ExitCode == -532462766)
-                    {
-                        _log.Warning("Couldn't generate map for non-existent dimension.");
-                    }
-                    else
-                    {
-                        _log.Error($"Map generation failed with exit code {process.ExitCode}.");
-                    }
+                    _log.Warning("Couldn't generate map for non-existent dimension.");
+                }
+                else
+                {
+                    _log.Error($"Map generation failed with exit code {process.ExitCode}.");
                 }
             }
         }
@@ -145,27 +162,28 @@
             if (Utils.IsLinux())
             {
                 _log.Info("Making PapyrusCs executable.");
-                using (var process = new Process())
+
+                var chmod = $"chmod +x '{PapyrusCsExecutable}'";
+
+                using var process = new Process
                 {
-                    var chmod = $"chmod +x '{PapyrusCsExecutable}'";
-                    
-                    process.StartInfo = new ProcessStartInfo
+                    StartInfo = new ProcessStartInfo
                     {
                         RedirectStandardOutput = true,
                         UseShellExecute = false,
                         CreateNoWindow = true,
                         FileName = "/bin/bash",
                         Arguments = $"-c \"{chmod}\""
-                    };
-
-                    process.Start();
-                    process.WaitForExit();
-
-                    if (process.ExitCode != 0)
-                    {
-                        _log.Error($"\"{chmod}\" failed with exit code {process.ExitCode}.");
                     }
                 };
+
+                process.Start();
+                process.WaitForExit();
+
+                if (process.ExitCode != 0)
+                {
+                    _log.Error($"\"{chmod}\" failed with exit code {process.ExitCode}.");
+                }
             }
         }
     }

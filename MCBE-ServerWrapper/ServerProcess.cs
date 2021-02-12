@@ -7,11 +7,13 @@
     using System.Threading;
 
     using AhlSoft.BedrockServerWrapper.Backups;
+    using AhlSoft.BedrockServerWrapper.PlayerManagement;
 
     public class ServerProcess : IDisposable
     {
         private readonly Process _serverProcess;
         private readonly InputOutputManager _inputOutputManager;
+        private readonly PlayerManager _playerManager;
         private readonly BackupManager _backupManager;
         private readonly Log _log;
         private readonly Settings _settings;
@@ -47,12 +49,14 @@
                 _serverProcess.StartInfo.FileName = Path.Combine(serverDirectory, "bedrock_server.exe");
             }
 
-            _inputOutputManager = new InputOutputManager(log, settings, this);
-            _backupManager = new BackupManager(log, _settings, serverDirectory);
+            _playerManager = new PlayerManager(log);
+            _inputOutputManager = new InputOutputManager(log, settings, this, _playerManager);
+            
+            _backupManager = new BackupManager(log, _settings, _playerManager, serverDirectory);
             _backupManager.BackupCompleted += _inputOutputManager.BackupCompleted;
+            _backupManager.ScheduledBackup += (_, __) => Backup();
 
             _inputOutputManager.BackupReady += _backupManager.ManualBackup;
-            _inputOutputManager.PlayerJoined += _backupManager.PlayerJoined;
         }
 
         /// <summary>
@@ -145,9 +149,9 @@
         {
             _log.Info("Server values:");
 
-            foreach (var serverValue in ServerValues)
+            foreach (var (name, value) in ServerValues)
             {
-                _log.Info($" * {serverValue.Key} : {serverValue.Value}");
+                _log.Info($" * {name} : {value}");
             }
         }
 
@@ -162,7 +166,6 @@
                 _settings.Save();
 
 				_inputOutputManager.BackupReady -= _backupManager.ManualBackup;
-				_inputOutputManager.PlayerJoined -= _backupManager.PlayerJoined;
 
                 _inputOutputManager?.Dispose();
                 _serverProcess?.Dispose();

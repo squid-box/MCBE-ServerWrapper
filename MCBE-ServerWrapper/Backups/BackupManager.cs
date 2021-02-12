@@ -4,17 +4,19 @@
     using System.Globalization;
     using System.IO;
     using System.IO.Compression;
-
+    using System.Timers;
     using AhlSoft.BedrockServerWrapper.PlayerManagement;
 
     /// <summary>
     /// Manages server backups.
     /// </summary>
-    public class BackupManager
+    public class BackupManager : IDisposable
     {
-        private readonly Settings _settings;
-        private readonly PapyrusCsController _papyrusCsController;
         private readonly Log _log;
+        private readonly Settings _settings;
+        private readonly PlayerManager _playerManager;
+        private readonly PapyrusCsManager _papyrusCsManager;
+        private readonly Timer _scheduledBackupTimer;
 
         private readonly string _serverRoot;
 
@@ -25,15 +27,40 @@
         /// </summary>
         /// <param name="log"></param>
         /// <param name="settings"></param>
-        public BackupManager(Log log, Settings settings, string serverRoot)
+        /// <param name="playerManager"></param>
+        /// <param name="serverRoot"></param>
+        public BackupManager(Log log, Settings settings, PlayerManager playerManager, string serverRoot)
         {
             _log = log;
             _settings = settings;
-            _papyrusCsController = new PapyrusCsController(_settings, log);
+            _playerManager = playerManager;
+            _papyrusCsManager = new PapyrusCsManager(_settings, log);
             _serverRoot = serverRoot;
 
             HasBackupBeenInitiated = false;
             _hasUserBeenOnlineSinceLastBackup = false;
+
+            _playerManager.PlayerConnected += (_, __) => _hasUserBeenOnlineSinceLastBackup = true;
+
+            if (_settings.AutomaticUpdatesEnabled)
+            {
+                _scheduledBackupTimer = new Timer(_settings.AutomaticBackupFrequency * 60 * 1000)
+                {
+                    AutoReset = true,
+                    Enabled = true
+                };
+
+                _scheduledBackupTimer.Elapsed += (_, __) =>
+                {
+                    if (!_hasUserBeenOnlineSinceLastBackup)
+                    {
+                        _log.Info("Skipping scheduled backup since no user has been online since last time.");
+                        return;
+                    }
+
+                    ScheduledBackup?.Invoke(this, EventArgs.Empty);
+                };
+            }
         }
 
         /// <summary>
@@ -42,42 +69,33 @@
         public event EventHandler<BackupCompletedEventArgs> BackupCompleted;
 
         /// <summary>
+        /// Invoked whenever a backup is scheduled to be performed.
+        /// </summary>
+        public event EventHandler ScheduledBackup;
+
+        /// <summary>
         /// Value indicating whether or not a backup has been initiated.
         /// </summary>
         public bool HasBackupBeenInitiated { get; set; }
 
-        internal void PlayerJoined(object sender, PlayerConnectionEventArgs args)
+        /// <inheritdoc cref="IDisposable" />
+        public void Dispose()
         {
-            _hasUserBeenOnlineSinceLastBackup = true;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="arguments"></param>
-        internal void RunScheduledBackup(string arguments)
-        {
-            if (_hasUserBeenOnlineSinceLastBackup)
-            {
-                Backup(arguments, false);
-            }
-            else
-            {
-                _log.Info("Skipped scheduled backup, no users have been online.");
-            }
+            _scheduledBackupTimer?.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         internal void ManualBackup(object sender, BackupReadyEventArgs eventArgs)
         {
             if (HasBackupBeenInitiated)
             {
-                Backup(eventArgs.BackupArguments, true);
+                Backup(eventArgs.BackupArguments);
             }
         }
 
-        private void Backup(string arguments, bool manual)
+        private void Backup(string arguments)
         {
-            _log.Info($"Started {(manual ? "manual" : "scheduled")} backup.");
+            _log.Info($"Started backup.");
             var start = DateTime.Now;
             var tmpDir = Path.Combine(Path.GetTempPath(), "mcbesw_backup");
             
@@ -87,6 +105,7 @@
             }
             
             Directory.CreateDirectory(tmpDir);
+            Directory.CreateDirectory(_settings.BackupFolder);
 
             _log.Info("Copying files...");
 
@@ -107,7 +126,7 @@
                     Utils.DeleteDirectory(tmpDir, _log);
                     HasBackupBeenInitiated = false;
 
-                    BackupCompleted?.Invoke(this, new BackupCompletedEventArgs(string.Empty, manual, TimeSpan.Zero, false));
+                    BackupCompleted?.Invoke(this, new BackupCompletedEventArgs(string.Empty, TimeSpan.Zero, false));
 
                     return;
                 }
@@ -117,12 +136,11 @@
             var backupName = Path.Combine(_settings.BackupFolder, GetBackupFileName());
             ZipFile.CreateFromDirectory(tmpDir, backupName, CompressionLevel.Optimal, false);
 
-            _papyrusCsController.GenerateMap(Path.Combine(tmpDir, _settings.ServerFolder, "worlds", _settings.LevelName));
+            _papyrusCsManager.GenerateMap(tmpDir);
 
-            Utils.DeleteDirectory(tmpDir, _log);
-            
-            BackupCompleted?.Invoke(this, new BackupCompletedEventArgs(backupName, manual, DateTime.Now - start));
+            BackupCompleted?.Invoke(this, new BackupCompletedEventArgs(backupName, DateTime.Now - start));
             HasBackupBeenInitiated = false;
+            _hasUserBeenOnlineSinceLastBackup = _playerManager.UsersOnline != 0;
         }
 
         private static string GetBackupFileName()
