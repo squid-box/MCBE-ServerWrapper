@@ -1,32 +1,35 @@
-﻿namespace AhlSoft.BedrockServerWrapper
+﻿namespace AhlSoft.BedrockServerWrapper.Logging
 {
     using System;
     using System.IO;
 
-    /// <summary>
-    /// Logging class.
-    /// </summary>
-    public class Log
+    /// <inheritdoc cref="ILog" />
+    public class Log : ILog
     {
-        private readonly Settings _settings;
+        private const string LogFilePath = "mcbsw.log";
         private readonly ConsoleColor _originalConsoleColor;
 
-        public Log(Settings settings)
+        /// <summary>
+        /// Creates a new <see cref="Log"/>.
+        /// </summary>
+        public Log()
         {
-            _settings = settings;
             _originalConsoleColor = Console.ForegroundColor;
         }
 
+        /// <inheritdoc />
         public void Info(string message)
         {
             WriteMessage("INFO", message, _originalConsoleColor);
         }
 
+        /// <inheritdoc />
         public void Warning(string message)
         {
             WriteMessage("WARN", message, ConsoleColor.Yellow);
         }
 
+        /// <inheritdoc />
         public void Error(string message)
         {
             WriteMessage(" ERR", message, ConsoleColor.DarkRed);
@@ -45,7 +48,7 @@
             Console.Out.WriteLine(formattedMessage);
             Console.ForegroundColor = _originalConsoleColor;
             
-            File.AppendAllText(_settings.LogFilePath, formattedMessage + Environment.NewLine);
+            File.AppendAllText(LogFilePath, formattedMessage + Environment.NewLine);
         }
     }
 }

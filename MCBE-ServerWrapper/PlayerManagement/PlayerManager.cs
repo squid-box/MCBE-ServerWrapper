@@ -3,23 +3,17 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-
+    using AhlSoft.BedrockServerWrapper.Logging;
     using Newtonsoft.Json;
 
-    /// <summary>
-    /// Manages player activity.
-    /// </summary>
-    public class PlayerManager
+    /// <inheritdoc cref="IPlayerManager" />
+    public class PlayerManager : IPlayerManager
     {
         private const string PlayerTimeLogFile = @"playertime.json";
         private const string PlayerSeenLogFile = @"playerseen.json";
-        private readonly Log _log;
+        private readonly ILog _log;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="log"></param>
-        public PlayerManager(Log log)
+        public PlayerManager(ILog log)
         {
             _log = log;
             _online = new Dictionary<Player, DateTime>();
@@ -27,14 +21,10 @@
             _lastSeenLog = LoadSeenLog();
         }
 
-        /// <summary>
-        /// Invoked whenever a player joins the game.
-        /// </summary>
+        /// <inheritdoc />
         public event EventHandler<PlayerConnectionEventArgs> PlayerConnected;
 
-        /// <summary>
-        /// Invoked whenever a player joins the game.
-        /// </summary>
+        /// <inheritdoc />
         public event EventHandler<PlayerConnectionEventArgs> PlayerDisconnected;
 
         /// <summary>
@@ -49,12 +39,8 @@
         /// </summary>
         private readonly Dictionary<string, int> _timeLog;
 
-        /// <summary>
-        /// Gets number of minutes a <see cref="Player"/> has spent on this server.
-        /// </summary>
-        /// <param name="player"><see cref="Player"/> to check played time for.</param>
-        /// <returns>Number of minutes the <see cref="Player"/> has spent on this server.</returns>
-        internal int GetPlayedMinutes(Player player)
+        /// <inheritdoc />
+        public int GetPlayedMinutes(Player player)
         {
             if (!_timeLog.ContainsKey(player.Name))
             {
@@ -64,20 +50,16 @@
             return _timeLog[player.Name];
         }
 
-        internal DateTime GetLastSeen(Player player)
+        /// <inheritdoc />
+        public DateTime GetLastSeen(Player player)
         {
-            if (!_lastSeenLog.ContainsKey(player.Name))
-            {
-                return DateTime.MinValue;
-            }
-
-            return _lastSeenLog[player.Name];
+            return !_lastSeenLog.ContainsKey(player.Name) ? 
+                DateTime.MinValue : 
+                _lastSeenLog[player.Name];
         }
 
-        /// <summary>
-        /// Called when a <see cref="Player"/> logs out.
-        /// </summary>
-        internal void PlayerLeft(Player player)
+        /// <inheritdoc />
+        public void PlayerLeft(Player player)
         {
             if (!_online.ContainsKey(player))
             {
@@ -101,10 +83,8 @@
             SaveSeenLog();
         }
 
-        /// <summary>
-        /// Called when a <see cref="Player"/> logs in.
-        /// </summary>
-        internal void PlayerJoined(Player player)
+        /// <inheritdoc />
+        public void PlayerJoined(Player player)
         {
             if (_online.ContainsKey(player))
             {
@@ -117,9 +97,7 @@
             PlayerConnected?.Invoke(this, new PlayerConnectionEventArgs(player));
         }
 
-        /// <summary>
-        /// Gets the number of currently online users.
-        /// </summary>
+        /// <inheritdoc />
         public int UsersOnline => _online.Count;
 
         private Dictionary<string, int> LoadTimeLog()
