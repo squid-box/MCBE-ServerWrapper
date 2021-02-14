@@ -4,33 +4,37 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
+    using System.Text.RegularExpressions;
     using System.Threading;
 
     using AhlSoft.BedrockServerWrapper.Backups;
+    using AhlSoft.BedrockServerWrapper.Logging;
     using AhlSoft.BedrockServerWrapper.PlayerManagement;
 
-    public class ServerProcess : IDisposable
+    /// <inheritdoc cref="IServerProcess" />
+    public class ServerProcess : IServerProcess
     {
         private readonly Process _serverProcess;
-        private readonly InputOutputManager _inputOutputManager;
-        private readonly PlayerManager _playerManager;
-        private readonly BackupManager _backupManager;
-        private readonly Log _log;
-        private readonly Settings _settings;
+        private readonly IPlayerManager _playerManager;
+        private readonly IBackupManager _backupManager;
+        private readonly ILog _log;
+        private readonly ISettingsProvider _settingsProvider;
 
-        public ServerProcess(string serverDirectory, Log log, Settings settings)
+        private CancellationTokenSource _cancellationTokenSource;
+        private DateTime _serverStarting;
+
+        public ServerProcess(ILog log, ISettingsProvider settingsProvider, IPlayerManager playerManager, IBackupManager backupManager)
         {
-            ServerDirectory = serverDirectory;
             ServerValues = new Dictionary<string, string>();
 
-            _settings = settings;
+            _settingsProvider = settingsProvider;
             _log = log;
 
             _serverProcess = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    WorkingDirectory = serverDirectory,
+                    WorkingDirectory = settingsProvider.ServerFolder,
                     CreateNoWindow = true,
                     UseShellExecute = false,
                     RedirectStandardError = true,
@@ -41,31 +45,25 @@
 
             if (Utils.IsLinux())
             {
-                _serverProcess.StartInfo.FileName = Path.Combine(serverDirectory, "bedrock_server");
-                _serverProcess.StartInfo.EnvironmentVariables.Add("LD_LIBRARY_PATH", serverDirectory);
+                _serverProcess.StartInfo.FileName = Path.Combine(_settingsProvider.ServerFolder, "bedrock_server");
+                _serverProcess.StartInfo.EnvironmentVariables.Add("LD_LIBRARY_PATH", _settingsProvider.ServerFolder);
             }
             else
             {
-                _serverProcess.StartInfo.FileName = Path.Combine(serverDirectory, "bedrock_server.exe");
+                _serverProcess.StartInfo.FileName = Path.Combine(_settingsProvider.ServerFolder, "bedrock_server.exe");
             }
 
-            _playerManager = new PlayerManager(log);
-            _inputOutputManager = new InputOutputManager(log, settings, this, _playerManager);
+            _playerManager = playerManager;
             
-            _backupManager = new BackupManager(log, _settings, _playerManager, serverDirectory);
-            _backupManager.BackupCompleted += _inputOutputManager.BackupCompleted;
+            _backupManager = backupManager;
+            _backupManager.BackupCompleted += BackupCompleted;
             _backupManager.ScheduledBackup += (_, __) => Backup();
-
-            _inputOutputManager.BackupReady += _backupManager.ManualBackup;
         }
 
-        /// <summary>
-        /// Contains any properties and values related to the server.
-        /// </summary>
+        /// <inheritdoc />
         public Dictionary<string, string> ServerValues { get; }
 
-        public string ServerDirectory { get; }
-
+        /// <inheritdoc />
         public bool IsRunning
         {
             get
@@ -87,28 +85,41 @@
             }
         }
 
+        /// <inheritdoc />
         public void SendInputToProcess(string input)
         {
-            if (IsRunning)
+            if (input.Equals("values", StringComparison.OrdinalIgnoreCase))
+            {
+                PrintServerValues();
+            }
+            else if (input.Equals("backup", StringComparison.OrdinalIgnoreCase))
+            {
+                Backup();
+            }
+            else if (input.StartsWith("autobackup", StringComparison.OrdinalIgnoreCase))
+            {
+                HandleAutoBackupInput(input);
+            }
+            else if (IsRunning)
             {
                 _serverProcess.StandardInput.WriteLine(input);
             }
         }
 
+        /// <inheritdoc />
         public void Say(string message)
         {
             SendInputToProcess($"say {message}");
         }
 
-        /// <summary>
-        /// Initiates a backup.
-        /// </summary>
+        /// <inheritdoc />
         public void Backup()
         {
             _backupManager.HasBackupBeenInitiated = true;
             SendInputToProcess("save hold");
         }
 
+        /// <inheritdoc />
         public void Start()
         {
             _serverProcess.Start();
@@ -118,14 +129,15 @@
                 Thread.Sleep(100);
             }
 
-            _serverProcess.OutputDataReceived += _inputOutputManager.ReceivedStandardOutput;
-            _serverProcess.ErrorDataReceived += _inputOutputManager.ReceivedErrorOutput;
+            _serverProcess.OutputDataReceived += ReceivedStandardOutput;
+            _serverProcess.ErrorDataReceived += ReceivedErrorOutput;
 
             _serverProcess.BeginOutputReadLine();
             _serverProcess.BeginErrorReadLine();
             _serverProcess.StandardInput.AutoFlush = true;
         }
 
+        /// <inheritdoc />
         public void Stop()
         {
             SendInputToProcess("stop");
@@ -141,10 +153,11 @@
 
             _serverProcess.CancelOutputRead();
             _serverProcess.CancelErrorRead();
-            _serverProcess.OutputDataReceived -= _inputOutputManager.ReceivedStandardOutput;
-            _serverProcess.ErrorDataReceived -= _inputOutputManager.ReceivedErrorOutput;
+            _serverProcess.OutputDataReceived -= ReceivedStandardOutput;
+            _serverProcess.ErrorDataReceived -= ReceivedErrorOutput;
         }
 
+        /// <inheritdoc />
         public void PrintServerValues()
         {
             _log.Info("Server values:");
@@ -152,6 +165,178 @@
             foreach (var (name, value) in ServerValues)
             {
                 _log.Info($" * {name} : {value}");
+            }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void ReceivedStandardOutput(object sender, DataReceivedEventArgs e)
+        {
+            if (e?.Data == null)
+            {
+                return;
+            }
+
+            if (e.Data.Contains("Starting Server"))
+            {
+                _serverStarting = DateTime.Now;
+            }
+
+            if (e.Data.Contains("Server started"))
+            {
+                if (_serverStarting != DateTime.MinValue)
+                {
+                    _log.Info($"Server started in {(DateTime.Now - _serverStarting).TotalMilliseconds} ms.");
+                    return;
+                }
+            }
+
+            if (e.Data.Contains("Saving..."))
+            {
+                _log.Info("Backup started...");
+                Say("Backup started.");
+
+                _cancellationTokenSource?.Dispose();
+                _cancellationTokenSource = new CancellationTokenSource();
+
+                var thread = new Thread(() =>
+                {
+                    while (!_cancellationTokenSource.IsCancellationRequested)
+                    {
+                        SendInputToProcess("save query");
+                        Thread.Sleep(1000);
+                    }
+                });
+                thread.Start();
+
+                return;
+            }
+
+            if (e.Data.Contains("level.dat"))
+            {
+                _cancellationTokenSource.Cancel();
+                _backupManager.Backup(e.Data);
+                return;
+            }
+
+            if (e.Data.Contains("Player connected"))
+            {
+                var playerData = Regex.Match(e.Data, @".* Player connected: (.*), xuid: (.*)");
+                var player = new Player(playerData.Groups[1].Value, playerData.Groups[2].Value);
+                _playerManager.PlayerJoined(player);
+
+                var timePlayed = _playerManager.GetPlayedMinutes(player);
+
+                var thread = new Thread(() =>
+                {
+                    Thread.Sleep(5000);
+
+                    Say(timePlayed == -1
+                        ? $"Welcome {player}!"
+                        : $"Welcome back {player}, you've played {Utils.TimePlayedConversion(timePlayed)}, we last saw you {_playerManager.GetLastSeen(player):yyyy-MM-dd}.");
+                });
+                thread.Start();
+            }
+
+            if (e.Data.Contains("Player disconnected"))
+            {
+                var playerData = Regex.Match(e.Data, @".* Player disconnected: (.*), xuid: (.*)");
+                var player = new Player(playerData.Groups[1].Value, playerData.Groups[2].Value);
+                _playerManager.PlayerLeft(player);
+
+                Say($"Goodbye {player}!");
+            }
+
+            if (e.Data.Contains("Difficulty: ") && !ServerValues.ContainsKey("Difficulty"))
+            {
+                ServerValues.Add("Difficulty", Regex.Match(e.Data, @".*Difficulty: \d (.*)").Groups[1].Value);
+            }
+
+            if (e.Data.Contains("Game mode: ") && !ServerValues.ContainsKey("GameMode"))
+            {
+                ServerValues.Add("GameMode", Regex.Match(e.Data, @".*Game mode: \d (.*)").Groups[1].Value);
+            }
+
+            if (e.Data.Contains("Level Name: ") && !ServerValues.ContainsKey("LevelName"))
+            {
+                _settingsProvider.LevelName = Regex.Match(e.Data, @".*Level Name: (.*)").Groups[1].Value;
+            }
+
+            if (e.Data.Contains("Version") && !ServerValues.ContainsKey("ServerVersion"))
+            {
+                ServerValues["ServerVersion"] = Regex.Match(e.Data, @".*Version (\d+\.\d+\.\d+\.\d+)").Groups[1].Value;
+            }
+
+            if (e.Data.Contains("IPv4 supported") && !ServerValues.ContainsKey("IpV4Port"))
+            {
+                ServerValues["IpV4Port"] = Regex.Match(e.Data, @".*port: (\d*)").Groups[1].Value;
+            }
+
+            if (e.Data.Contains("IPv6 supported") && !ServerValues.ContainsKey("IpV6Port"))
+            {
+                ServerValues["IpV6Port"] = Regex.Match(e.Data, @".*port: (\d*)").Groups[1].Value;
+            }
+
+            _log.Info(e.Data);
+        }
+
+        private void ReceivedErrorOutput(object sender, DataReceivedEventArgs e)
+        {
+            _log.Error(e.Data);
+        }
+
+        private void BackupCompleted(object sender, BackupCompletedEventArgs args)
+        {
+            SendInputToProcess("save resume");
+
+            Say(args.Successful
+                ? $"Backup completed: {Path.GetFileName(args.BackupFile)} ({new FileInfo(args.BackupFile).Length / 1024 / 1024}MB), completed in {args.BackupDuration.TotalSeconds}s."
+                : "Backup failed.");
+        }
+
+        private void HandleAutoBackupInput(string input)
+        {
+            var splitTemp = input.Split(' ');
+
+            if (splitTemp.Length < 2)
+            {
+                _log.Error("\"autobackup\" accepts the following options: \"enable\", \"disable\", \"frequency <minutes>\".");
+                return;
+            }
+
+            switch (splitTemp[1])
+            {
+                case "enable":
+                    _settingsProvider.AutomaticBackupEnabled = true;
+                    break;
+                case "disable":
+                    _settingsProvider.AutomaticBackupEnabled = false;
+                    break;
+                case "frequency":
+                    if (splitTemp.Length != 3)
+                    {
+                        _log.Error("\"autobackup frequency\" requires an argument for the number of minutes between backups.");
+                        return;
+                    }
+
+                    try
+                    {
+                        _settingsProvider.AutomaticBackupFrequency = Convert.ToInt32(splitTemp[2]);
+                    }
+                    catch (Exception e)
+                    {
+                        _log.Error($"Could not convert \"{splitTemp[2]}\" to an integer. {e.GetType()}: {e.Message}");
+                    }
+
+                    break;
+                default:
+                    _log.Error("\"autobackup\" accepts the following options: \"enable\", \"disable\", \"frequency <minutes>\".");
+                    break;
             }
         }
 
@@ -163,20 +348,13 @@
 		{
 			if (disposing)
 			{
-                _settings.Save();
+                _settingsProvider.Save();
 
-				_inputOutputManager.BackupReady -= _backupManager.ManualBackup;
+                _backupManager.BackupCompleted -= BackupCompleted;
 
-                _inputOutputManager?.Dispose();
+                _cancellationTokenSource?.Dispose();
                 _serverProcess?.Dispose();
 			}
         }
-
-        /// <inheritdoc />
-        public void Dispose()
-		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-	}
+    }
 }

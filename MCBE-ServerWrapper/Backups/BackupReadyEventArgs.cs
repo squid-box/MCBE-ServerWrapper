@@ -11,21 +11,14 @@
         /// Creates a new <see cref="BackupReadyEventArgs"/>.
         /// </summary>
         /// <param name="backupArguments">Arguments for the backup to be performed.</param>
-        /// <param name="anyUserOnline">Whether there are any users currently online.</param>
-        public BackupReadyEventArgs(string backupArguments, bool anyUserOnline)
+        public BackupReadyEventArgs(string backupArguments)
         {
             BackupArguments = backupArguments;
-            AnyUserOnline = anyUserOnline;
         }
 
         /// <summary>
         /// Gets the arguments associated to this backup.
         /// </summary>
         public string BackupArguments { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether or not there are any users currently online.
-        /// </summary>
-        public bool AnyUserOnline { get; }
     }
 }

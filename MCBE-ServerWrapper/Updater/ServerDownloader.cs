@@ -8,6 +8,8 @@
     using System.Text.RegularExpressions;
     using System.Threading;
 
+    using AhlSoft.BedrockServerWrapper.Logging;
+
     /// <summary>
     /// 
     /// </summary>
@@ -15,7 +17,7 @@
     {
         private static readonly Uri ServerDownloadPage = new Uri("https://www.minecraft.net/en-us/download/server/bedrock/");
 
-        public static void GetServerFiles(Log log, string rootPath)
+        public static void GetServerFiles(ILog log, string rootPath)
         {
             if (Utils.IsLinux())
             {
@@ -39,21 +41,21 @@
         /// Determines the latest version of the server available for the current system.
         /// </summary>
         /// <returns>The latest version of the server available.</returns>
-        public static Version FindLatestServerVersion(Log log)
+        public static Version FindLatestServerVersion(ILog log)
         {
 	        return Utils.IsLinux() ? FindLatestLinuxServerVersion(log) : FindLatestWindowsServerVersion(log);
         }
 
-        private static Version FindLatestWindowsServerVersion(Log log)
+        private static Version FindLatestWindowsServerVersion(ILog log)
         {
             return FindCurrentVersion(log, @"https://minecraft.azureedge.net/bin-win/bedrock-server-(.*).zip");
         }
-        private static Version FindLatestLinuxServerVersion(Log log)
+        private static Version FindLatestLinuxServerVersion(ILog log)
         {
             return FindCurrentVersion(log, @"https://minecraft.azureedge.net/bin-linux/bedrock-server-(.*).zip");
         }
 
-        private static bool DownloadAndUnpackWindowsServer(Log log, string targetDirectory)
+        private static bool DownloadAndUnpackWindowsServer(ILog log, string targetDirectory)
         {
             log?.Info("Attempting to download Windows server files...");
 
@@ -69,7 +71,7 @@
             }
         }
 
-        private static bool DownloadAndUnpackLinuxServer(Log log, string targetDirectory)
+        private static bool DownloadAndUnpackLinuxServer(ILog log, string targetDirectory)
         {
             log?.Info("Attempting to download Linux server files...");
 
@@ -85,15 +87,13 @@
             }
         }
 
-        private static Version FindCurrentVersion(Log log, string regexPattern)
+        private static Version FindCurrentVersion(ILog log, string regexPattern)
         {
             try
             {
-                using (var client = new WebClient())
-                {
-                    var downloadPageSource = client.DownloadString(ServerDownloadPage);
-                    return new Version(Regex.Match(downloadPageSource, regexPattern).Groups[1].Value);
-                }
+                using var client = new WebClient();
+                var downloadPageSource = client.DownloadString(ServerDownloadPage);
+                return new Version(Regex.Match(downloadPageSource, regexPattern).Groups[1].Value);
             }
             catch (Exception e)
             {
@@ -102,7 +102,7 @@
             }
         }
 
-        private static bool DownloadAndUnzipPackage(Log log, Uri packageUrl, string targetDirectory)
+        private static bool DownloadAndUnzipPackage(ILog log, Uri packageUrl, string targetDirectory)
         {
             var protectedFiles = new[]
             {
@@ -163,7 +163,7 @@
 
                     log?.Info("Unzip complete.");
 
-                    Directory.Delete(tempBackupDir, true);
+                    Utils.DeleteDirectory(tempBackupDir, log);
 
                     return true;
                 }
@@ -177,11 +177,9 @@
 
         private static Uri FindDownloadUrl(string regexPattern)
         {
-            using (var client = new WebClient())
-            {
-                var downloadPageSource = client.DownloadString(ServerDownloadPage);
-                return new Uri(Regex.Match(downloadPageSource, regexPattern).Groups[1].Value);
-            }
+            using var client = new WebClient();
+            var downloadPageSource = client.DownloadString(ServerDownloadPage);
+            return new Uri(Regex.Match(downloadPageSource, regexPattern).Groups[1].Value);
         }
     }
 }

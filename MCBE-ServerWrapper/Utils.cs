@@ -6,6 +6,8 @@
     using System.IO;
     using System.Linq;
 
+    using AhlSoft.BedrockServerWrapper.Logging;
+
     /// <summary>
     /// General utilities.
     /// </summary>
@@ -43,6 +45,11 @@
             return requiredFiles.All(File.Exists);
         }
 
+        /// <summary>
+        /// Converts a given number of minutes to a friendly format.
+        /// </summary>
+        /// <param name="minutes">Number of minutes to convert.</param>
+        /// <returns>A formatted string representing the given number of minutes.</returns>
         public static string TimePlayedConversion(int minutes)
         {
             var timespan = TimeSpan.FromMinutes(minutes);
@@ -55,7 +62,13 @@
         /// </summary>
         public static string ProgramVersion => FileVersionInfo.GetVersionInfo(Environment.GetCommandLineArgs()[0]).FileVersion;
 
-        public static bool DeleteDirectory(string dir, Log log)
+        /// <summary>
+        /// Attempt to delete a directory.
+        /// </summary>
+        /// <param name="dir">Path to directory to delete.</param>
+        /// <param name="log">Logger to use.</param>
+        /// <returns>True if successful, otherwise false.</returns>
+        public static bool DeleteDirectory(string dir, ILog log)
         {
 	        try
 	        {
@@ -69,6 +82,12 @@
 	        }
         }
 
+        /// <summary>
+        /// Copies a given number of bytes from a file to another file.
+        /// </summary>
+        /// <param name="source">Source file to read from.</param>
+        /// <param name="destination">Destination file to write to.</param>
+        /// <param name="bytesToRead">Bytes to copy from <paramref name="source"/> to <paramref name="destination"/>.</param>
         public static void CopyFile(string source, string destination, int bytesToRead)
         {
 	        var buffer = new byte[bytesToRead];
