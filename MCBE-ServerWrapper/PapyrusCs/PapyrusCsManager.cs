@@ -9,6 +9,7 @@
     using System.Threading.Tasks;
 
     using AhlSoft.BedrockServerWrapper.Logging;
+    using AhlSoft.BedrockServerWrapper.Settings;
 
     /// <inheritdoc cref="IPapyrusCsManager" />
     public class PapyrusCsManager : IPapyrusCsManager
@@ -28,13 +29,20 @@
         }
 
         private string PapyrusCsExecutable => Path.Combine(_settingsProvider.PapyrusFolder, Utils.IsLinux() ? "PapyrusCs" : "PapyrusCs.exe");
-
-        /// <inheritdoc />
-        public bool IsPapyrusCsAvailable => File.Exists(PapyrusCsExecutable);
+        
+        /// <summary>
+        /// Gets a value indicating whether or not PapyrusCs is installed and available.
+        /// </summary>
+        private bool IsPapyrusCsAvailable => File.Exists(PapyrusCsExecutable);
 
         /// <inheritdoc />
         public void GenerateMap(string tempFolder)
         {
+            if (!_settingsProvider.PapyrusEnabled)
+            {
+                return;
+            }
+
             Task.Run(() =>
             {
                 _log.Info("Map generation starting.");
@@ -68,12 +76,11 @@
 
                 try
                 {
-                    _log.Info("Deleting temporary backup files.");
                     Utils.DeleteDirectory(tempFolder, _log);
                 }
                 catch (Exception e)
                 {
-                    _log.Error($"Couldn't delete files. {e.GetType()}: {e.Message}");
+                    _log.Error($"Couldn't delete temporary files. {e.GetType()}: {e.Message}");
                 }
 
                 if (!string.IsNullOrEmpty(_settingsProvider.PapyrusPostRunCommand))

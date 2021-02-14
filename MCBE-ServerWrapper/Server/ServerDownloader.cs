@@ -1,4 +1,4 @@
-﻿namespace AhlSoft.BedrockServerWrapper.Updater
+﻿namespace AhlSoft.BedrockServerWrapper.Server
 {
     using System;
     using System.IO;

@@ -1,4 +1,4 @@
-﻿namespace AhlSoft.BedrockServerWrapper
+﻿namespace AhlSoft.BedrockServerWrapper.Settings
 {
     using System;
 
@@ -31,6 +31,11 @@
         /// Folder where backups are placed.
         /// </summary>
         public string BackupFolder { get; set; }
+
+        /// <summary>
+        /// Whether or not PapyrusCs should be triggered on backups.
+        /// </summary>
+        public bool PapyrusEnabled { get; set; }
 
         /// <summary>
         /// Folder where PapyrusCs executables are put.

@@ -1,4 +1,4 @@
-﻿namespace AhlSoft.BedrockServerWrapper
+﻿namespace AhlSoft.BedrockServerWrapper.Server
 {
     using System;
     using System.Collections.Generic;

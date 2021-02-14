@@ -5,10 +5,6 @@
     /// </summary>
     public interface IPapyrusCsManager
     {
-        /// <summary>
-        /// Gets a value indicating whether or not PapyrusCs is installed and available.
-        /// </summary>
-        public bool IsPapyrusCsAvailable { get; }
 
         /// <summary>
         /// Generates map(s) for the world in the <paramref name="tempFolder"/> folder.

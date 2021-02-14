@@ -9,6 +9,7 @@
     using AhlSoft.BedrockServerWrapper.Logging;
     using AhlSoft.BedrockServerWrapper.PapyrusCs;
     using AhlSoft.BedrockServerWrapper.PlayerManagement;
+    using AhlSoft.BedrockServerWrapper.Settings;
 
     /// <inheritdoc cref="IBackupManager" />
     public class BackupManager : IBackupManager, IDisposable
