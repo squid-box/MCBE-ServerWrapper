@@ -17,85 +17,105 @@
     {
         private static IContainer Container { get; set; }
 
+        private static ILog Log { get; set; }
+
         /// <summary>
         /// Entry point for program.
         /// </summary>
         public static void Main()
         {
-            var builder = new ContainerBuilder();
-            builder.RegisterType<Log>().As<ILog>().SingleInstance();
-            builder.Register(_ => SettingsProvider.Load()).As<ISettingsProvider>().SingleInstance();
-            builder.RegisterType<PapyrusCsManager>().As<IPapyrusCsManager>().SingleInstance();
-            builder.RegisterType<PlayerManager>().As<IPlayerManager>().SingleInstance();
-            builder.RegisterType<BackupManager>().As<IBackupManager>().SingleInstance();
-            builder.RegisterType<ServerProcess>().As<IServerProcess>().SingleInstance();
-            Container = builder.Build();
-            
-            var log = Container.Resolve<ILog>();
-            var settings = Container.Resolve<ISettingsProvider>();
-
-            PrintTitle(log);
-
-            if (!Utils.ValidateServerFiles(settings.ServerFolder))
+            try
             {
-                log.Info("Could not find required server files, downloading latest version.");
+                var builder = new ContainerBuilder();
+                builder.RegisterType<Log>().As<ILog>().SingleInstance();
+                builder.Register(_ => SettingsProvider.Load()).As<ISettingsProvider>().SingleInstance();
+                builder.RegisterType<PapyrusCsManager>().As<IPapyrusCsManager>().SingleInstance();
+                builder.RegisterType<PlayerManager>().As<IPlayerManager>().SingleInstance();
+                builder.RegisterType<BackupManager>().As<IBackupManager>().SingleInstance();
+                builder.RegisterType<ServerProcess>().As<IServerProcess>().SingleInstance();
+                Container = builder.Build();
 
-                ServerDownloader.GetServerFiles(log, settings.ServerFolder);
+                Log = Container.Resolve<ILog>();
+                var settings = Container.Resolve<ISettingsProvider>();
+
+                PrintTitle();
 
                 if (!Utils.ValidateServerFiles(settings.ServerFolder))
                 {
-                    log.Error("Server files broken / missing, please check and retry.");
-                    Environment.Exit(ExitCodes.InvalidServerFiles);
+                    Log.Info("Could not find required server files, downloading latest version.");
+
+                    ServerDownloader.GetServerFiles(Log, settings.ServerFolder);
+
+                    if (!Utils.ValidateServerFiles(settings.ServerFolder))
+                    {
+                        Log.Error("Server files broken / missing, please check and retry.");
+                        Environment.Exit(ExitCodes.InvalidServerFiles);
+                    }
                 }
-            }
 
-            using (var serverProcess = Container.Resolve<IServerProcess>())
-            {
-                serverProcess.Start();
-
-                while (true)
+                using (var serverProcess = Container.Resolve<IServerProcess>())
                 {
-                    var input = Console.ReadLine();
+                    serverProcess.Start();
 
-                    if (string.IsNullOrWhiteSpace(input))
+                    while (true)
                     {
-                        continue;
+                        var input = Console.ReadLine();
+
+                        if (string.IsNullOrWhiteSpace(input))
+                        {
+                            continue;
+                        }
+
+                        if (input.Equals("stop", StringComparison.OrdinalIgnoreCase))
+                        {
+                            break;
+                        }
+
+                        if (input.Equals("update", StringComparison.OrdinalIgnoreCase))
+                        {
+                            CheckForUpdates(serverProcess, settings.ServerFolder);
+                        }
+                        else
+                        {
+                            serverProcess.SendInputToProcess(input);
+                        }
                     }
 
-                    if (input.Equals("stop", StringComparison.OrdinalIgnoreCase))
-                    {
-                        break;
-                    }
-
-                    if (input.Equals("update", StringComparison.OrdinalIgnoreCase))
-                    {
-                        CheckForUpdates(serverProcess, settings.ServerFolder, log);
-                    }
-                    else
-                    {
-                        serverProcess.SendInputToProcess(input);
-                    }
+                    serverProcess.Stop();
                 }
 
-                serverProcess.Stop();
+                Environment.Exit(ExitCodes.Ok);
             }
+            catch (Exception e)
+            {
+                var message = $"Unhandled exception. {e.GetType()}: {e.Message}";
 
-            Environment.Exit(ExitCodes.Ok);
+                if (Log != null)
+                {
+                    Log?.Error(message);
+                }
+                else
+                {
+                    Console.Error.WriteLine(message);
+                }
+                
+                Environment.Exit(ExitCodes.UnknownCrash);
+            }
         }
 
-        private static void PrintTitle(ILog log)
+        private static void PrintTitle()
         {
-            log.Info("----------------------------------------------");
-            log.Info("  Minecraft Bedrock Dedicated Server Wrapper  ");
-            log.Info($"  Version: {Utils.ProgramVersion}");
-            log.Info("----------------------------------------------");
-            log.Info("");
+            Log?.Info("----------------------------------------------");
+            Log?.Info("  Minecraft Bedrock Dedicated Server Wrapper  ");
+            Log?.Info($"  Version: {Utils.ProgramVersion}");
+            Log?.Info("----------------------------------------------");
+            Log?.Info("");
         }
 
-        private static void CheckForUpdates(IServerProcess serverProcess, string rootPath, ILog log)
+        private static void CheckForUpdates(IServerProcess serverProcess, string rootPath)
         {
-            log.Info("Checking for latest Bedrock server version...");
-            var latestVersion = ServerDownloader.FindLatestServerVersion(log);
+            Log?.Info("Checking for latest Bedrock server version...");
+            var latestVersion = ServerDownloader.FindLatestServerVersion(Log);
 
             if (
                 latestVersion != null && 
@@ -104,21 +124,21 @@
             {
                 if (new Version(serverProcess.ServerValues["ServerVersion"]) < latestVersion)
                 {
-                    log.Info($"Found new version {latestVersion}, stopping server and updating.");
+                    Log?.Info($"Found new version {latestVersion}, stopping server and updating.");
                     serverProcess.Stop();
 
-                    ServerDownloader.GetServerFiles(log, rootPath);
+                    ServerDownloader.GetServerFiles(Log, rootPath);
 
                     serverProcess.Start();
                 }
                 else
                 {
-                    log.Info("Server is up-to-date!");
+                    Log?.Info("Server is up-to-date!");
                 }
             }
             else
             {
-                log.Error("Unable to determine status version, update check aborted.");
+                Log?.Error("Unable to determine status version, update check aborted.");
             }
         }
     }
