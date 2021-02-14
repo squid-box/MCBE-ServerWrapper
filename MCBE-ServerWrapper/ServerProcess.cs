@@ -201,7 +201,7 @@
                 _log.Info("Backup started...");
                 Say("Backup started.");
 
-                _cancellationTokenSource.Dispose();
+                _cancellationTokenSource?.Dispose();
                 _cancellationTokenSource = new CancellationTokenSource();
 
                 var thread = new Thread(() =>

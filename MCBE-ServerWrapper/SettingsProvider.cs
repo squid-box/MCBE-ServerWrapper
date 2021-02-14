@@ -10,6 +10,10 @@
     {
         private bool _automaticBackupEnabled;
         private int _automaticBackupFrequency;
+        private string _papyrusFolder;
+        private string _papyrusOutputFolder;
+        private string _serverFolder;
+        private string _backupFolder;
         private const string SettingsFile = "mcbsw.conf";
 
         private SettingsProvider()
@@ -60,7 +64,7 @@
             
             set
             {
-                if (_automaticBackupFrequency != value)
+                if (_automaticBackupFrequency != value && value > 0)
                 {
                     _automaticBackupFrequency = value;
                     AutomaticBackupFrequencyChanged?.Invoke(this, EventArgs.Empty);
@@ -72,22 +76,38 @@
         public event EventHandler AutomaticBackupFrequencyChanged;
 
         /// <inheritdoc />
-        public string BackupFolder { get; set; }
+        public string BackupFolder
+        {
+            get => _backupFolder;
+            set => _backupFolder = !string.IsNullOrWhiteSpace(value) ? value : "Backups";
+        }
 
         /// <inheritdoc />
         public string LevelName { get; set; }
 
         /// <inheritdoc />
-        public string PapyrusFolder { get; set; }
+        public string PapyrusFolder
+        {
+            get => _papyrusFolder;
+            set => _papyrusFolder = !string.IsNullOrWhiteSpace(value) ? value : "PapyrusCs";
+        }
 
         /// <inheritdoc />
-        public string PapyrusOutputFolder { get; set; }
+        public string PapyrusOutputFolder
+        {
+            get => _papyrusOutputFolder;
+            set => _papyrusOutputFolder = !string.IsNullOrWhiteSpace(value) ? value : Path.Combine(PapyrusFolder, "GeneratedMap");
+        }
 
         /// <inheritdoc />
         public string PapyrusPostRunCommand { get; set; }
 
         /// <inheritdoc />
-        public string ServerFolder { get; set; }
+        public string ServerFolder
+        {
+            get => _serverFolder;
+            set => _serverFolder = !string.IsNullOrWhiteSpace(value) ? value : "Server";
+        }
 
         /// <inheritdoc />
         public void Save()
