@@ -76,6 +76,10 @@
                         {
                             CheckForUpdates(serverProcess, settings.ServerFolder);
                         }
+                        else if (input.Equals("licensing", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Licenses.PrintLicenses();
+                        }
                         else
                         {
                             serverProcess.SendInputToProcess(input);
