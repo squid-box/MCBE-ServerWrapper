@@ -34,6 +34,7 @@
             {
                 StartInfo = new ProcessStartInfo
                 {
+                    FileName = Path.Combine(_settingsProvider.ServerFolder, ServerExecutable),
                     WorkingDirectory = settingsProvider.ServerFolder,
                     CreateNoWindow = true,
                     UseShellExecute = false,
@@ -45,12 +46,7 @@
 
             if (Utils.IsLinux())
             {
-                _serverProcess.StartInfo.FileName = Path.Combine(_settingsProvider.ServerFolder, "bedrock_server");
                 _serverProcess.StartInfo.EnvironmentVariables.Add("LD_LIBRARY_PATH", _settingsProvider.ServerFolder);
-            }
-            else
-            {
-                _serverProcess.StartInfo.FileName = Path.Combine(_settingsProvider.ServerFolder, "bedrock_server.exe");
             }
 
             _playerManager = playerManager;
@@ -68,26 +64,32 @@
         {
             get
             {
-                if (_serverProcess == null)
-                {
-                    return false;
-                }
-
                 try
                 {
                     Process.GetProcessById(_serverProcess.Id);
                     return true;
                 }
-                catch (ArgumentException)
+                catch (Exception)
                 {
                     return false;
                 }
             }
         }
 
+        /// <summary>
+        /// Gets the filename of the server executable.
+        /// </summary>
+        private static string ServerExecutable => Utils.IsLinux() ? "bedrock_server" : "bedrock_server.exe";
+
         /// <inheritdoc />
         public void SendInputToProcess(string input)
         {
+            if (!IsRunning)
+            {
+                _log.Error("Unable to send input to process: not running.");
+                return;
+            }
+
             if (input.Equals("values", StringComparison.OrdinalIgnoreCase))
             {
                 PrintServerValues();
@@ -100,7 +102,7 @@
             {
                 HandleAutoBackupInput(input);
             }
-            else if (IsRunning)
+            else
             {
                 _serverProcess.StandardInput.WriteLine(input);
             }
@@ -122,6 +124,11 @@
         /// <inheritdoc />
         public void Start()
         {
+            if (!IsRunning && Process.GetProcessesByName(Path.GetFileNameWithoutExtension(ServerExecutable)).Length > 0)
+            {
+                throw new InvalidOperationException("Server process is already running, can't start again.");
+            }
+
             _serverProcess.Start();
 
             while (!IsRunning)

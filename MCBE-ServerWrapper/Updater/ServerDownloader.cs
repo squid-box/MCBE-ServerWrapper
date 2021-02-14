@@ -11,12 +11,17 @@
     using AhlSoft.BedrockServerWrapper.Logging;
 
     /// <summary>
-    /// 
+    /// Utility class for finding and downloading server data.
     /// </summary>
     public static class ServerDownloader
     {
         private static readonly Uri ServerDownloadPage = new Uri("https://www.minecraft.net/en-us/download/server/bedrock/");
 
+        /// <summary>
+        /// Gets appropriate server files and puts them in a given path.
+        /// </summary>
+        /// <param name="log">Logger to use.</param>
+        /// <param name="rootPath">Path to download files to.</param>
         public static void GetServerFiles(ILog log, string rootPath)
         {
             if (Utils.IsLinux())
@@ -113,60 +118,59 @@
 
             try
             {
-                using (var client = new WebClient())
+                using var client = new WebClient();
+
+                var done = false;
+                var lastProgress = 0;
+
+                client.DownloadProgressChanged += (s, a) => { lastProgress = a.ProgressPercentage; };
+                client.DownloadFileCompleted += (s, a) => { done = true; };
+
+                var filename = Path.GetTempFileName();
+                var tempBackupDir = Path.Combine(Path.GetTempPath(), "mcbesw_protectedfiles");
+                client.DownloadFileAsync(packageUrl, filename);
+
+                while (!done)
                 {
-                    var done = false;
-                    var lastProgress = 0;
-
-                    client.DownloadProgressChanged += (s, a) => { lastProgress = a.ProgressPercentage; };
-                    client.DownloadFileCompleted += (s, a) => { done = true; };
-
-                    var filename = Path.GetTempFileName();
-                    var tempBackupDir = Path.Combine(Path.GetTempPath(), "mcbesw_protectedfiles");
-                    client.DownloadFileAsync(packageUrl, filename);
-
-                    while (!done)
-                    {
-                        log?.Info($"Progress: {lastProgress}%");
-                        Thread.Sleep(1000);
-                    }
-
-                    log?.Info("Download complete.");
-
-                    Directory.CreateDirectory(targetDirectory);
-                    Directory.CreateDirectory(tempBackupDir);
-
-                    using (var zip = ZipFile.OpenRead(filename))
-                    {
-                        log?.Info($"Unzipping {zip.Entries.Count} files...");
-
-                        foreach (var entry in zip.Entries)
-                        {
-                            var destination = Path.Combine(targetDirectory, entry.FullName);
-
-                            if (protectedFiles.Contains(destination) && File.Exists(destination))
-                            {
-                                continue;
-                            }
-
-                            Directory.CreateDirectory(Path.GetDirectoryName(destination));
-
-                            // If the entry is a directory (not a file), don't try to extract it.
-                            if (Directory.Exists(destination))
-                            {
-                                continue;
-                            }
-
-							entry.ExtractToFile(destination, true);
-                        }
-                    }
-
-                    log?.Info("Unzip complete.");
-
-                    Utils.DeleteDirectory(tempBackupDir, log);
-
-                    return true;
+                    log?.Info($"Progress: {lastProgress}%");
+                    Thread.Sleep(1000);
                 }
+
+                log?.Info("Download complete.");
+
+                Directory.CreateDirectory(targetDirectory);
+                Directory.CreateDirectory(tempBackupDir);
+
+                using (var zip = ZipFile.OpenRead(filename))
+                {
+                    log?.Info($"Unzipping {zip.Entries.Count} files...");
+
+                    foreach (var entry in zip.Entries)
+                    {
+                        var destination = Path.Combine(targetDirectory, entry.FullName);
+
+                        if (protectedFiles.Contains(destination) && File.Exists(destination))
+                        {
+                            continue;
+                        }
+
+                        Directory.CreateDirectory(Path.GetDirectoryName(destination));
+
+                        // If the entry is a directory (not a file), don't try to extract it.
+                        if (Directory.Exists(destination))
+                        {
+                            continue;
+                        }
+
+                        entry.ExtractToFile(destination, true);
+                    }
+                }
+
+                log?.Info("Unzip complete.");
+
+                Utils.DeleteDirectory(tempBackupDir, log);
+
+                return true;
             }
             catch (Exception e)
             {
