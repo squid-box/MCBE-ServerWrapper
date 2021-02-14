@@ -307,8 +307,9 @@
             _log.Info("MCBE-SW commands:");
             _log.Info("* autobackup : Allows you to change automatic backup settings.");
             _log.Info("* backup : Performs a backup.");
-            _log.Info("* update : Checks for new MCBE server version, and updates if available.");
+            _log.Info("* licensing : Prints license information.");
             _log.Info("* stop : Stops the server and shuts down MCBE-SW.");
+            _log.Info("* update : Checks for new MCBE server version, and updates if available.");
             _log.Info("");
             _log.Info("Use \"help <number>\" for MCBE help pages");
         }
