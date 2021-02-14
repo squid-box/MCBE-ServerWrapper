@@ -1,4 +1,4 @@
-﻿namespace AhlSoft.BedrockServerWrapper
+﻿namespace AhlSoft.BedrockServerWrapper.Server
 {
     using System;
     using System.Collections.Generic;
@@ -10,6 +10,7 @@
     using AhlSoft.BedrockServerWrapper.Backups;
     using AhlSoft.BedrockServerWrapper.Logging;
     using AhlSoft.BedrockServerWrapper.PlayerManagement;
+    using AhlSoft.BedrockServerWrapper.Settings;
 
     /// <inheritdoc cref="IServerProcess" />
     public class ServerProcess : IServerProcess
@@ -101,6 +102,10 @@
             else if (input.StartsWith("autobackup", StringComparison.OrdinalIgnoreCase))
             {
                 HandleAutoBackupInput(input);
+            }
+            else if (input.Equals("help", StringComparison.OrdinalIgnoreCase))
+            {
+                Help();
             }
             else
             {
@@ -295,6 +300,17 @@
         private void ReceivedErrorOutput(object sender, DataReceivedEventArgs e)
         {
             _log.Error(e.Data);
+        }
+
+        private void Help()
+        {
+            _log.Info("MCBE-SW commands:");
+            _log.Info("* autobackup : Allows you to change automatic backup settings.");
+            _log.Info("* backup : Performs a backup.");
+            _log.Info("* update : Checks for new MCBE server version, and updates if available.");
+            _log.Info("* stop : Stops the server and shuts down MCBE-SW.");
+            _log.Info("");
+            _log.Info("Use \"help <number>\" for MCBE help pages");
         }
 
         private void BackupCompleted(object sender, BackupCompletedEventArgs args)

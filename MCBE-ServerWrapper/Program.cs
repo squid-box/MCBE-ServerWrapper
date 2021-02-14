@@ -6,7 +6,8 @@
     using AhlSoft.BedrockServerWrapper.Logging;
     using AhlSoft.BedrockServerWrapper.PapyrusCs;
     using AhlSoft.BedrockServerWrapper.PlayerManagement;
-    using AhlSoft.BedrockServerWrapper.Updater;
+    using AhlSoft.BedrockServerWrapper.Settings;
+    using AhlSoft.BedrockServerWrapper.Server;
 
     using Autofac;
 

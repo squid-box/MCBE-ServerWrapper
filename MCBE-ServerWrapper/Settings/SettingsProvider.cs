@@ -1,4 +1,4 @@
-﻿namespace AhlSoft.BedrockServerWrapper
+﻿namespace AhlSoft.BedrockServerWrapper.Settings
 {
     using System;
     using System.IO;
@@ -83,6 +83,9 @@
         }
 
         /// <inheritdoc />
+        public bool PapyrusEnabled { get; set; }
+
+        /// <inheritdoc />
         public string LevelName { get; set; }
 
         /// <inheritdoc />
@@ -123,6 +126,7 @@
 
             ServerFolder = "Server";
             BackupFolder = "Backups";
+            PapyrusEnabled = true;
             PapyrusFolder = "PapyrusCs";
             PapyrusOutputFolder = Path.Combine(PapyrusFolder, "GeneratedMap");
         }
