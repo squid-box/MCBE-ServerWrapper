@@ -5,7 +5,7 @@
     using System.Diagnostics;
     using System.IO;
     using System.Linq;
-
+    using System.Reflection;
     using AhlSoft.BedrockServerWrapper.Logging;
 
     /// <summary>
@@ -60,7 +60,7 @@
         /// <summary>
         /// Gets the version of this program.
         /// </summary>
-        public static string ProgramVersion => FileVersionInfo.GetVersionInfo(Environment.GetCommandLineArgs()[0]).FileVersion;
+        public static string ProgramVersion => FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
 
         /// <summary>
         /// Attempt to delete a directory.
