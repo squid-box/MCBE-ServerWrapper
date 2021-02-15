@@ -57,6 +57,11 @@
             _backupManager.ScheduledBackup += (_, __) => Backup();
         }
 
+        /// <summary>
+        /// Gets the filename of the server executable.
+        /// </summary>
+        public static string ServerExecutable => Utils.IsLinux() ? "bedrock_server" : "bedrock_server.exe";
+
         /// <inheritdoc />
         public Dictionary<string, string> ServerValues { get; }
 
@@ -76,11 +81,6 @@
                 }
             }
         }
-
-        /// <summary>
-        /// Gets the filename of the server executable.
-        /// </summary>
-        private static string ServerExecutable => Utils.IsLinux() ? "bedrock_server" : "bedrock_server.exe";
 
         /// <inheritdoc />
         public void SendInputToProcess(string input)

@@ -170,29 +170,7 @@
 
             if (Utils.IsLinux())
             {
-                _log.Info("Making PapyrusCs executable.");
-
-                var chmod = $"chmod +x '{PapyrusCsExecutable}'";
-
-                using var process = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        RedirectStandardOutput = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        FileName = "/bin/bash",
-                        Arguments = $"-c \"{chmod}\""
-                    }
-                };
-
-                process.Start();
-                process.WaitForExit();
-
-                if (process.ExitCode != 0)
-                {
-                    _log.Error($"\"{chmod}\" failed with exit code {process.ExitCode}.");
-                }
+                Utils.MakeExecutable(PapyrusCsExecutable, _log);
             }
         }
     }
