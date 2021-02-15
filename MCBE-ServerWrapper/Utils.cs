@@ -70,11 +70,17 @@
         /// <returns>True if successful, otherwise false.</returns>
         public static bool DeleteDirectory(string dir, ILog log)
         {
-	        try
+            if (!Directory.Exists(dir))
+            {
+                return false;
+            }
+
+            try
 	        {
-		        Directory.Delete(dir, true);
-		        return true;
-	        }
+                Directory.Delete(dir, true);
+                return true;
+
+            }
 	        catch (Exception e)
 	        {
 		        log?.Error($"Couldn't delete files/folder: {e.GetType()} - {e.Message}");

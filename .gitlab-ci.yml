@@ -1,5 +1,5 @@
 variables:
-  VER_PREFIX: '1.0.0'
+  VER_PREFIX: '1.0.1'
   EXE_RELEASE_FOLDER: 'Stage\Release'
   DEPLOY_FOLDER: 'Stage\Deploy'
 
