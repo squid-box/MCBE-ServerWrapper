@@ -124,7 +124,7 @@
 
             if (process.ExitCode != 0)
             {
-                if (process.ExitCode == -532462766)
+                if (process.ExitCode == -532462766 || process.ExitCode == 134)
                 {
                     _log.Warning("Couldn't generate map for non-existent dimension.");
                 }
