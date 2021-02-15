@@ -170,6 +170,16 @@
 
                 Utils.DeleteDirectory(tempBackupDir, log);
 
+                if (Utils.IsLinux())
+                {
+                    if (!Utils.MakeExecutable(Path.Combine(targetDirectory, ServerProcess.ServerExecutable), log))
+                    {
+                        log?.Error("Could not make server program executable.");
+
+                        return false;
+                    }
+                }
+
                 return true;
             }
             catch (Exception e)

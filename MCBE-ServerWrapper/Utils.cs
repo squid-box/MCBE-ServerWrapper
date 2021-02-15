@@ -5,7 +5,7 @@
     using System.Diagnostics;
     using System.IO;
     using System.Linq;
-
+    using System.Reflection;
     using AhlSoft.BedrockServerWrapper.Logging;
 
     /// <summary>
@@ -60,7 +60,7 @@
         /// <summary>
         /// Gets the version of this program.
         /// </summary>
-        public static string ProgramVersion => FileVersionInfo.GetVersionInfo(Environment.GetCommandLineArgs()[0]).FileVersion;
+        public static string ProgramVersion => FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
 
         /// <summary>
         /// Attempt to delete a directory.
@@ -70,11 +70,17 @@
         /// <returns>True if successful, otherwise false.</returns>
         public static bool DeleteDirectory(string dir, ILog log)
         {
-	        try
+            if (!Directory.Exists(dir))
+            {
+                return false;
+            }
+
+            try
 	        {
-		        Directory.Delete(dir, true);
-		        return true;
-	        }
+                Directory.Delete(dir, true);
+                return true;
+
+            }
 	        catch (Exception e)
 	        {
 		        log?.Error($"Couldn't delete files/folder: {e.GetType()} - {e.Message}");
@@ -107,6 +113,53 @@
 	        }
 
 	        File.WriteAllBytes(destination, buffer);
-        }  
+        }
+
+        /// <summary>
+        /// Runs 'chmod +x' on a given file.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="log"></param>
+        public static bool MakeExecutable(string path, ILog log)
+        {
+            if (!IsLinux())
+            {
+                log?.Error("Can't call chmod on non-Linux system.");
+                return false;
+            }
+
+            log?.Info($"Making \"{path}\" executable.");
+
+            if (!File.Exists(path))
+            {
+                log?.Error("File \"path\" does not exist.");
+                return false;
+            }
+
+            var chmod = $"chmod +x '{path}'";
+
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    FileName = "/bin/bash",
+                    Arguments = $"-c \"{chmod}\""
+                }
+            };
+
+            process.Start();
+            process.WaitForExit();
+
+            if (process.ExitCode == 0)
+            {
+                return true;
+            }
+
+            log?.Error($"\"{chmod}\" failed with exit code {process.ExitCode}.");
+            return false;
+        }
     }
 }

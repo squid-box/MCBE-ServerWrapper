@@ -23,8 +23,18 @@
         /// <summary>
         /// Entry point for program.
         /// </summary>
-        public static void Main()
+        /// <param name="args">Arguments passed to application</param>
+        public static void Main(string[] args)
         {
+            if (args.Length == 1 &&
+                (args[0].Equals("-v") ||
+                args[0].Equals("/v") ||
+                args[0].Equals("--version")))
+            {
+                Console.Out.WriteLine(Utils.ProgramVersion);
+                Environment.Exit(ExitCodes.Ok);
+            }
+
             try
             {
                 var builder = new ContainerBuilder();
