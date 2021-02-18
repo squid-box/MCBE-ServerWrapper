@@ -115,7 +115,7 @@
         /// <inheritdoc />
         public void Save()
         {
-            File.WriteAllText(SettingsFile, JsonConvert.SerializeObject(this));
+            File.WriteAllText(SettingsFile, JsonConvert.SerializeObject(this, Formatting.Indented));
         }
 
         /// <inheritdoc />

@@ -126,12 +126,12 @@
 
         private void SaveTimeLog()
         {
-            File.WriteAllText(PlayerTimeLogFile, JsonConvert.SerializeObject(_timeLog));
+            File.WriteAllText(PlayerTimeLogFile, JsonConvert.SerializeObject(_timeLog, Formatting.Indented));
         }
 
         private void SaveSeenLog()
         {
-            File.WriteAllText(PlayerSeenLogFile, JsonConvert.SerializeObject(_lastSeenLog));
+            File.WriteAllText(PlayerSeenLogFile, JsonConvert.SerializeObject(_lastSeenLog, Formatting.Indented));
         }
     }
 }
