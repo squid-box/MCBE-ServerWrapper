@@ -1,16 +1,30 @@
 variables:
   VER_PREFIX: '1.0.1'
-  EXE_RELEASE_FOLDER: 'Stage\Release'
-  DEPLOY_FOLDER: 'Stage\Deploy'
+  EXE_RELEASE_FOLDER: 'Stage/Release'
 
 stages:
   - build
 
-build_job:
-  stage: build
+windows:
+  stage: 'build'
+  dependencies: []
   script:
-    - dotnet publish --configuration Release --nologo -p:PublishReadyToRun=true  -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -p:Version=$env:VER_PREFIX.$env:CI_PIPELINE_IID --runtime win-x64
-    - dotnet publish --configuration Release --nologo -p:PublishReadyToRun=false -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -p:Version=$env:VER_PREFIX.$env:CI_PIPELINE_IID --runtime linux-x64
+    - dotnet publish --configuration Release --nologo -p:PublishReadyToRun=true  -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -p:Version=$VER_PREFIX.$CI_PIPELINE_IID --runtime win-x64
+    - cp "$EXE_RELEASE_FOLDER/win-x64/publish/MCBSW.exe" MCBSW.exe
   artifacts:
+    name: 'mcbsw-win64_$VER_PREFIX.$CI_PIPELINE_IID'
+    when: on_success
     paths:
-      - '$env:EXE_RELEASE_FOLDER\*\publish\MCBSW*'
+      - 'MCBSW.exe'
+
+linux:
+  stage: 'build'
+  dependencies: []
+  script:
+    - dotnet publish --configuration Release --nologo -p:PublishReadyToRun=false -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -p:Version=$VER_PREFIX.$CI_PIPELINE_IID --runtime linux-x64
+    - cp "$EXE_RELEASE_FOLDER/linux-x64/publish/MCBSW" mcbsw
+  artifacts:
+    name: 'mcbsw-linux64_$VER_PREFIX.$CI_PIPELINE_IID'
+    when: on_success
+    paths:
+      - 'mcbsw'

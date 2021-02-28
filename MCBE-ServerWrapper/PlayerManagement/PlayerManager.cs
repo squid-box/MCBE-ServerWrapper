@@ -3,7 +3,9 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+
     using AhlSoft.BedrockServerWrapper.Logging;
+
     using Newtonsoft.Json;
 
     /// <inheritdoc cref="IPlayerManager" />
