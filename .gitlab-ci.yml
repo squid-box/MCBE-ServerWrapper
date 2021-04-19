@@ -1,5 +1,5 @@
 variables:
-  VER_PREFIX: '1.0.1'
+  VER_PREFIX: '1.1.0'
   EXE_RELEASE_FOLDER: 'Stage/Release'
 
 stages:

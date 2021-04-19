@@ -3,52 +3,56 @@
     using System;
     using System.IO;
 
+    using Spectre.Console;
+
     /// <inheritdoc cref="ILog" />
     public class Log : ILog
     {
         private const string LogFilePath = "mcbsw.log";
-        private readonly ConsoleColor _originalConsoleColor;
 
-        /// <summary>
-        /// Creates a new <see cref="Log"/>.
-        /// </summary>
-        public Log()
+        /// <inheritdoc />
+        public void Info(string message, string color = "green", bool logToConsole = true)
         {
-            _originalConsoleColor = Console.ForegroundColor;
+            WriteMessage("INFO", message, logToConsole, color);
         }
 
         /// <inheritdoc />
-        public void Info(string message)
+        public void Warning(string message, string color = "yellow", bool logToConsole = true)
         {
-            WriteMessage("INFO", message, _originalConsoleColor);
+            WriteMessage("WARN", message, logToConsole, color);
         }
 
         /// <inheritdoc />
-        public void Warning(string message)
+        public void Error(string message, string color = "red", bool logToConsole = true)
         {
-            WriteMessage("WARN", message, ConsoleColor.Yellow);
+            WriteMessage(" ERR", message, logToConsole, color);
         }
 
-        /// <inheritdoc />
-        public void Error(string message)
-        {
-            WriteMessage(" ERR", message, ConsoleColor.DarkRed);
-        }
-
-        private void WriteMessage(string level, string message, ConsoleColor consoleColor)
+        private static void WriteMessage(string level, string message, bool logToConsole, string format = "")
         {
             if (string.IsNullOrWhiteSpace(message))
             {
                 return;
             }
 
-            var formattedMessage = $"|{level}|{DateTime.Now:yyyy-MM-dd HH:mm:ss}|{message}";
+            var formattedMessage = $"|{level}|{DateTime.Now:yyyy-MM-dd HH:mm:ss}| {message}";
 
-            Console.ForegroundColor = consoleColor;
-            Console.Out.WriteLine(formattedMessage);
-            Console.ForegroundColor = _originalConsoleColor;
-            
             File.AppendAllText(LogFilePath, formattedMessage + Environment.NewLine);
+
+            if (!logToConsole)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(format))
+            {
+                var fancyMessage = $"[grey]|[/][{format}]{level}[/][grey]|[/]{DateTime.Now:yyyy-MM-dd HH:mm:ss}[grey]|[/] [{format}]{message.EscapeMarkup()}[/]";
+                AnsiConsole.MarkupLine(fancyMessage);
+            }
+            else
+            {
+                Console.WriteLine(formattedMessage);
+            }
         }
     }
 }

@@ -10,6 +10,7 @@
     using AhlSoft.BedrockServerWrapper.Server;
 
     using Autofac;
+    using Spectre.Console;
 
     /// <summary>
     /// Entry point for program.
@@ -77,6 +78,8 @@
                             continue;
                         }
 
+                        input = input.Trim();
+
                         if (input.Equals("stop", StringComparison.OrdinalIgnoreCase))
                         {
                             break;
@@ -105,26 +108,23 @@
             {
                 var message = $"Unhandled exception. {e.GetType()}: {e.Message}";
 
-                if (Log != null)
-                {
-                    Log?.Error(message);
-                }
-                else
-                {
-                    Console.Error.WriteLine(message);
-                }
-                
+                Log?.Error(message, "red", false);
+                AnsiConsole.WriteException(e);
+
                 Environment.Exit(ExitCodes.UnknownCrash);
             }
         }
 
         private static void PrintTitle()
         {
-            Log?.Info("----------------------------------------------");
-            Log?.Info("  Minecraft Bedrock Dedicated Server Wrapper  ");
-            Log?.Info($"  Version: {Utils.ProgramVersion}");
-            Log?.Info("----------------------------------------------");
-            Log?.Info("");
+            var titleRule = new Rule("[lightseagreen]Minecraft Bedrock Dedicated Server Wrapper[/]")
+            {
+                Alignment = Justify.Center,
+                Style = Style.Parse("lightseagreen")
+            };
+
+            AnsiConsole.Render(titleRule);
+            Log?.Info($"Starting version: {Utils.ProgramVersion}");
         }
 
         private static void CheckForUpdates(IServerProcess serverProcess, string rootPath)
