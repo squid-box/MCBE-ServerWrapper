@@ -1,1 +1,1 @@
-Build status: [![Build Status](https://build.ahlgren.io/app/rest/builds/buildType:(id:GitHub_BedrockServerWrapper_Build)/statusIcon)](https://build.ahlgren.io/viewType.html?buildTypeId=GitHub_BedrockServerWrapper_Build)
+# Minecraft Bedrock Edition: Server Wrapper
