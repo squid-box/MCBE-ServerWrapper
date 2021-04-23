@@ -52,6 +52,14 @@
 
                 PrintTitle();
 
+                var (updateAvailable, updateVersion, updateUrl) = SelfUpdater.CheckForUpdate(Log);
+
+                if (updateAvailable)
+                {
+                    Log.Info($"MCBSW can be updated to {updateVersion}.");
+                    Log.Info($"Download available at: \"{updateUrl}\".");
+                }
+
                 if (!Utils.ValidateServerFiles(settings.ServerFolder))
                 {
                     Log.Info("Could not find required server files, downloading latest version.");
