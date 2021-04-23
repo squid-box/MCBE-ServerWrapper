@@ -33,6 +33,12 @@
         public string BackupFolder { get; set; }
 
         /// <summary>
+        /// The number of backups to keep during cleanup.
+        /// </summary>
+        /// <remarks>Zero indicates setting is ignored.</remarks>
+        public int NumberOfBackups { get; set; }
+
+        /// <summary>
         /// Whether or not PapyrusCs should be triggered on backups.
         /// </summary>
         public bool PapyrusEnabled { get; set; }

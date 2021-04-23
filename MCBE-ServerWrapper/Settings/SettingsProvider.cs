@@ -14,6 +14,7 @@
         private string _papyrusOutputFolder;
         private string _serverFolder;
         private string _backupFolder;
+        private int _numberOfBackups;
         private const string SettingsFile = "mcbsw.conf";
 
         private SettingsProvider()
@@ -83,6 +84,20 @@
         }
 
         /// <inheritdoc />
+        public int NumberOfBackups
+        {
+            get => _numberOfBackups;
+
+            set
+            {
+                if (value >= 0)
+                {
+                    _numberOfBackups = value;
+                }
+            }
+        }
+
+        /// <inheritdoc />
         public bool PapyrusEnabled { get; set; }
 
         /// <inheritdoc />
@@ -123,6 +138,8 @@
         {
             AutomaticBackupEnabled = true;
             AutomaticBackupFrequency = 60;
+
+            NumberOfBackups = 7;
 
             ServerFolder = "Server";
             BackupFolder = "Backups";

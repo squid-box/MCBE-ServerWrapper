@@ -111,6 +111,20 @@
                 Log?.Error(message, "red", false);
                 AnsiConsole.WriteException(e);
 
+                try
+                {
+                    var serverProcess = Container.Resolve<IServerProcess>();
+                    
+                    if (serverProcess.IsRunning)
+                    {
+                        serverProcess.Stop();
+                    }
+                }
+                catch (Exception f)
+                {
+                    Log?.Warning($"Could not kill server process: {f.GetType()} - {f.Message}");
+                }
+
                 Environment.Exit(ExitCodes.UnknownCrash);
             }
         }

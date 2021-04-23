@@ -8,6 +8,8 @@
     /// <inheritdoc cref="ILog" />
     public class Log : ILog
     {
+        private static readonly object LogLock = new object();
+
         private const string LogFilePath = "mcbsw.log";
 
         /// <inheritdoc />
@@ -35,23 +37,27 @@
                 return;
             }
 
-            var formattedMessage = $"|{level}|{DateTime.Now:yyyy-MM-dd HH:mm:ss}| {message}";
-
-            File.AppendAllText(LogFilePath, formattedMessage + Environment.NewLine);
-
-            if (!logToConsole)
+            lock (LogLock)
             {
-                return;
-            }
+                var formattedMessage = $"|{level}|{DateTime.Now:yyyy-MM-dd HH:mm:ss}| {message}";
 
-            if (!string.IsNullOrEmpty(format))
-            {
-                var fancyMessage = $"[grey]|[/][{format}]{level}[/][grey]|[/]{DateTime.Now:yyyy-MM-dd HH:mm:ss}[grey]|[/] [{format}]{message.EscapeMarkup()}[/]";
-                AnsiConsole.MarkupLine(fancyMessage);
-            }
-            else
-            {
-                Console.WriteLine(formattedMessage);
+                File.AppendAllText(LogFilePath, formattedMessage + Environment.NewLine);
+
+                if (!logToConsole)
+                {
+                    return;
+                }
+
+                if (!string.IsNullOrEmpty(format))
+                {
+                    var fancyMessage =
+                        $"[grey]|[/][{format}]{level}[/][grey]|[/]{DateTime.Now:yyyy-MM-dd HH:mm:ss}[grey]|[/] [{format}]{message.EscapeMarkup()}[/]";
+                    AnsiConsole.MarkupLine(fancyMessage);
+                }
+                else
+                {
+                    Console.WriteLine(formattedMessage);
+                }
             }
         }
     }

@@ -4,6 +4,7 @@
     using System.Globalization;
     using System.IO;
     using System.IO.Compression;
+    using System.Linq;
     using System.Timers;
 
     using AhlSoft.BedrockServerWrapper.Logging;
@@ -115,6 +116,9 @@
 
             _papyrusCsManager.GenerateMap(tmpDir);
 
+            CleanOldBackups();
+
+            _log.Info($"Backup saved to \"{backupName}\".");
             BackupCompleted?.Invoke(this, new BackupCompletedEventArgs(backupName, DateTime.Now - start));
             HasBackupBeenInitiated = false;
             _hasUserBeenOnlineSinceLastBackup = _playerManager.UsersOnline != 0;
@@ -160,6 +164,35 @@
                     _scheduledBackupTimer.Elapsed -= ScheduledBackupTimerOnElapsed;
                     _scheduledBackupTimer.Dispose();
                 }
+            }
+        }
+
+        private void CleanOldBackups()
+        {
+            if (_settingsProvider.NumberOfBackups == 0)
+            {
+                // Skip cleanup if setting is "disabled".
+                return;
+            }
+
+            var filesToDelete = new DirectoryInfo(_settingsProvider.BackupFolder)
+                .GetFiles("backup_*.zip")
+                .OrderByDescending(f => f.LastWriteTime)
+                .Select(f => Path.Combine(_settingsProvider.BackupFolder, f.Name))
+                .Skip(_settingsProvider.NumberOfBackups + 1);
+
+            foreach (var file in filesToDelete)
+            {
+                try
+                {
+                    _log.Info($"Deleting backup file \"{file}\".");
+                    File.Delete(file);
+                }
+                catch (Exception e)
+                {
+                    _log.Warning($"Could not delete file: {e.GetType()} - {e.Message}");
+                }
+                
             }
         }
 
