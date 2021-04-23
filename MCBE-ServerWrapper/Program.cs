@@ -10,6 +10,7 @@
     using AhlSoft.BedrockServerWrapper.Server;
 
     using Autofac;
+    using Spectre.Console;
 
     /// <summary>
     /// Entry point for program.
@@ -51,6 +52,14 @@
 
                 PrintTitle();
 
+                var (updateAvailable, updateVersion, updateUrl) = SelfUpdater.CheckForUpdate(Log);
+
+                if (updateAvailable)
+                {
+                    Log.Info($"MCBSW can be updated to {updateVersion}.");
+                    Log.Info($"Download available at: \"{updateUrl}\".");
+                }
+
                 if (!Utils.ValidateServerFiles(settings.ServerFolder))
                 {
                     Log.Info("Could not find required server files, downloading latest version.");
@@ -76,6 +85,8 @@
                         {
                             continue;
                         }
+
+                        input = input.Trim();
 
                         if (input.Equals("stop", StringComparison.OrdinalIgnoreCase))
                         {
@@ -105,26 +116,37 @@
             {
                 var message = $"Unhandled exception. {e.GetType()}: {e.Message}";
 
-                if (Log != null)
+                Log?.Error(message, "red", false);
+                AnsiConsole.WriteException(e);
+
+                try
                 {
-                    Log?.Error(message);
+                    var serverProcess = Container.Resolve<IServerProcess>();
+                    
+                    if (serverProcess.IsRunning)
+                    {
+                        serverProcess.Stop();
+                    }
                 }
-                else
+                catch (Exception f)
                 {
-                    Console.Error.WriteLine(message);
+                    Log?.Warning($"Could not kill server process: {f.GetType()} - {f.Message}");
                 }
-                
+
                 Environment.Exit(ExitCodes.UnknownCrash);
             }
         }
 
         private static void PrintTitle()
         {
-            Log?.Info("----------------------------------------------");
-            Log?.Info("  Minecraft Bedrock Dedicated Server Wrapper  ");
-            Log?.Info($"  Version: {Utils.ProgramVersion}");
-            Log?.Info("----------------------------------------------");
-            Log?.Info("");
+            var titleRule = new Rule("[lightseagreen]Minecraft Bedrock Dedicated Server Wrapper[/]")
+            {
+                Alignment = Justify.Center,
+                Style = Style.Parse("lightseagreen")
+            };
+
+            AnsiConsole.Render(titleRule);
+            Log?.Info($"Starting version: {Utils.ProgramVersion}");
         }
 
         private static void CheckForUpdates(IServerProcess serverProcess, string rootPath)

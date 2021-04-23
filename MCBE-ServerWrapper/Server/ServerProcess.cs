@@ -11,6 +11,7 @@
     using AhlSoft.BedrockServerWrapper.Logging;
     using AhlSoft.BedrockServerWrapper.PlayerManagement;
     using AhlSoft.BedrockServerWrapper.Settings;
+    using Spectre.Console;
 
     /// <inheritdoc cref="IServerProcess" />
     public class ServerProcess : IServerProcess
@@ -172,12 +173,24 @@
         /// <inheritdoc />
         public void PrintServerValues()
         {
-            _log.Info("Server values:");
+            // Create a table
+            var table = new Table();
 
+            // Add some columns
+            table.AddColumn("Name");
+            table.AddColumn("Value");
+
+            var alternating = true;
+
+            // Add some rows
             foreach (var (name, value) in ServerValues)
             {
-                _log.Info($" * {name} : {value}");
+                table.AddRow($"[{(alternating ? "white" : "grey84")}]{name}[/]", $"[{(alternating ? "white" : "grey84")}]{value}[/]");
+                alternating = !alternating;
             }
+
+            // Render the table to the console
+            AnsiConsole.Render(table);
         }
 
         /// <inheritdoc />
@@ -203,14 +216,14 @@
             {
                 if (_serverStarting != DateTime.MinValue)
                 {
-                    _log.Info($"Server started in {(DateTime.Now - _serverStarting).TotalMilliseconds} ms.");
+                    _log.Info($"Server started in {(DateTime.Now - _serverStarting).TotalMilliseconds} ms.", "white");
                     return;
                 }
             }
 
             if (e.Data.Contains("Saving..."))
             {
-                _log.Info("Backup started...");
+                _log.Info("Backup started...", "grey");
                 Say("Backup started.");
 
                 _cancellationTokenSource?.Dispose();
@@ -294,7 +307,7 @@
                 ServerValues["IpV6Port"] = Regex.Match(e.Data, @".*port: (\d*)").Groups[1].Value;
             }
 
-            _log.Info(e.Data);
+            _log.Info(e.Data.Replace("┬º2", string.Empty), "white");
         }
 
         private void ReceivedErrorOutput(object sender, DataReceivedEventArgs e)
@@ -304,32 +317,41 @@
 
         private void Help()
         {
-            _log.Info("MCBE-SW commands:");
-            _log.Info("* autobackup : Allows you to change automatic backup settings.");
-            _log.Info("* backup : Performs a backup.");
-            _log.Info("* licensing : Prints license information.");
-            _log.Info("* stop : Stops the server and shuts down MCBE-SW.");
-            _log.Info("* update : Checks for new MCBE server version, and updates if available.");
-            _log.Info("");
-            _log.Info("Use \"help <number>\" for MCBE help pages");
+            AnsiConsole.MarkupLine("[underline]MCBE-SW commands:[/]");
+            AnsiConsole.MarkupLine("* [cornflowerblue]autobackup[/] : Allows you to change automatic backup settings.");
+            AnsiConsole.MarkupLine("* [cornflowerblue]backup[/] : Performs a backup.");
+            AnsiConsole.MarkupLine("* [cornflowerblue]licensing[/] : Prints license information.");
+            AnsiConsole.MarkupLine("* [cornflowerblue]stop[/] : Stops the server and shuts down MCBE-SW.");
+            AnsiConsole.MarkupLine("* [cornflowerblue]update[/] : Checks for new MCBE server version, and updates if available.");
+            AnsiConsole.MarkupLine("");
+            AnsiConsole.MarkupLine("Use \"[cornflowerblue]help <number>[/]\" for MCBE help pages");
         }
 
         private void BackupCompleted(object sender, BackupCompletedEventArgs args)
         {
             SendInputToProcess("save resume");
+            var backupFile = args.BackupFile;
+
+            if (string.IsNullOrEmpty(backupFile))
+            {
+                Say("Backup failed to create a file..?");
+                return;
+            }
 
             Say(args.Successful
-                ? $"Backup completed: {Path.GetFileName(args.BackupFile)} ({new FileInfo(args.BackupFile).Length / 1024 / 1024}MB), completed in {args.BackupDuration.TotalSeconds}s."
+                ? $"Backup completed: {Path.GetFileName(backupFile)} ({new FileInfo(backupFile).Length / 1024 / 1024}MB), completed in {args.BackupDuration.TotalSeconds}s."
                 : "Backup failed.");
         }
 
         private void HandleAutoBackupInput(string input)
         {
+            const string errorMessage = "[cornflowerblue]autobackup[/] accepts the following options: [cornflowerblue]enable[/], [cornflowerblue]disable[/], [cornflowerblue]frequency <minutes>[/].";
+
             var splitTemp = input.Split(' ');
 
             if (splitTemp.Length < 2)
             {
-                _log.Error("\"autobackup\" accepts the following options: \"enable\", \"disable\", \"frequency <minutes>\".");
+                AnsiConsole.MarkupLine(errorMessage);
                 return;
             }
 
@@ -344,7 +366,7 @@
                 case "frequency":
                     if (splitTemp.Length != 3)
                     {
-                        _log.Error("\"autobackup frequency\" requires an argument for the number of minutes between backups.");
+                        AnsiConsole.MarkupLine("[cornflowerblue]autobackup frequency[/] requires an argument for the number of minutes between backups.");
                         return;
                     }
 
@@ -354,12 +376,12 @@
                     }
                     catch (Exception e)
                     {
-                        _log.Error($"Could not convert \"{splitTemp[2]}\" to an integer. {e.GetType()}: {e.Message}");
+                        AnsiConsole.MarkupLine($"Could not convert \"{splitTemp[2]}\" to an integer. {e.GetType()}: {e.Message}");
                     }
 
                     break;
                 default:
-                    _log.Error("\"autobackup\" accepts the following options: \"enable\", \"disable\", \"frequency <minutes>\".");
+                    AnsiConsole.MarkupLine(errorMessage);
                     break;
             }
         }
