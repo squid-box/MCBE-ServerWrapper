@@ -13,11 +13,6 @@
         public event EventHandler<PlayerConnectionEventArgs> PlayerConnected;
 
         /// <summary>
-        /// Invoked whenever a player joins the game.
-        /// </summary>
-        public event EventHandler<PlayerConnectionEventArgs> PlayerDisconnected;
-
-        /// <summary>
         /// Gets number of minutes a <see cref="Player"/> has spent on this server.
         /// </summary>
         /// <param name="player"><see cref="Player"/> to check played time for.</param>

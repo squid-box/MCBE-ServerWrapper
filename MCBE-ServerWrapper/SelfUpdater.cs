@@ -31,10 +31,20 @@
                     .OrderBy(c => c["uri"])
                     .Last();
 
-                var remoteVersion = Version.Parse(latest["uri"].Value<string>().Substring(1));
+                if (latest?["uri"] == null)
+                {
+                    throw new Exception("Unable to determine download URL.");
+                }
+
+                var remoteVersion = Version.Parse(latest["uri"].Value<string>()?[1..] ?? string.Empty);
                 var localVersion = Version.Parse(Utils.ProgramVersion);
 
                 var downloadInfo = JObject.Parse(wc.DownloadString($"{baseUrl}/{latest["uri"].Value<string>()}/{(Utils.IsLinux() ? "MCBSW" : "MCBSW.exe")}"));
+
+                if (downloadInfo["downloadUri"] == null)
+                {
+                    throw new Exception("Unable to determine download URL.");
+                }
 
                 return (remoteVersion > localVersion, remoteVersion, $"https{downloadInfo["downloadUri"].Value<string>()}");
             }

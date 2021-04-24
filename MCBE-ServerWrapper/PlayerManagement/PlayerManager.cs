@@ -26,9 +26,6 @@
         /// <inheritdoc />
         public event EventHandler<PlayerConnectionEventArgs> PlayerConnected;
 
-        /// <inheritdoc />
-        public event EventHandler<PlayerConnectionEventArgs> PlayerDisconnected;
-
         /// <summary>
         /// Collection of currently online <see cref="Player"/> and when they logged in.
         /// </summary>
@@ -68,8 +65,6 @@
                 _log.Warning($"Player \"{player}\" was not logged in!");
                 return;
             }
-
-            PlayerDisconnected?.Invoke(this, new PlayerConnectionEventArgs(player));
 
             if (!_timeLog.ContainsKey(player.Name))
             {

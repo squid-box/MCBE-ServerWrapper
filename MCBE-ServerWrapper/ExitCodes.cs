@@ -11,11 +11,6 @@
         public static int Ok => 0;
 
         /// <summary>
-        /// The number of arguments were invalid.
-        /// </summary>
-        public static int InvalidNumberOfArguments => 1;
-
-        /// <summary>
         /// The server files were invalid.
         /// </summary>
         public static int InvalidServerFiles => 2;

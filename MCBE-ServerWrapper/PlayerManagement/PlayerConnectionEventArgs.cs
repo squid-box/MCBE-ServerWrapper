@@ -10,7 +10,7 @@
         /// <summary>
         /// Creates a new <see cref="PlayerConnectionEventArgs"/>.
         /// </summary>
-        /// <param name="player">The <see cref="Player"/> that has conected.</param>
+        /// <param name="player">The <see cref="Player"/> that has connected.</param>
         public PlayerConnectionEventArgs(Player player)
         {
             Player = player;

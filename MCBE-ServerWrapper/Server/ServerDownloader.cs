@@ -127,7 +127,7 @@
                 client.DownloadFileCompleted += (s, a) => { done = true; };
 
                 var filename = Path.GetTempFileName();
-                var tempBackupDir = Path.Combine(Path.GetTempPath(), "mcbesw_protectedfiles");
+                var tempBackupDir = Path.Combine(Path.GetTempPath(), "mcbesw_protectedFiles");
                 client.DownloadFileAsync(packageUrl, filename);
 
                 while (!done)
@@ -154,7 +154,15 @@
                             continue;
                         }
 
-                        Directory.CreateDirectory(Path.GetDirectoryName(destination));
+                        var destinationDirectory = Path.GetDirectoryName(destination);
+
+                        if (destinationDirectory == null)
+                        {
+                            log?.Error($"Couldn't determine directory of path \"{destination}\".");
+                            return false;
+                        }
+
+                        Directory.CreateDirectory(destinationDirectory);
 
                         // If the entry is a directory (not a file), don't try to extract it.
                         if (Directory.Exists(destination))

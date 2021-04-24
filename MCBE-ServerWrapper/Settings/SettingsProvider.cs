@@ -33,7 +33,7 @@
                 return JsonConvert.DeserializeObject<SettingsProvider>(File.ReadAllText(SettingsFile));
             }
 
-            var newSettings = new SettingsProvider();
+            ISettingsProvider newSettings = new SettingsProvider();
             newSettings.Reset();
             newSettings.Save();
 

@@ -26,10 +26,10 @@
         /// <summary>
         /// Creates a new <see cref="BackupManager"/>.
         /// </summary>
-        /// <param name="log"></param>
-        /// <param name="settingsProvider"></param>
-        /// <param name="playerManager"></param>
-        /// <param name="papyrusCsManager"></param>
+        /// <param name="log">Logger to use.</param>
+        /// <param name="settingsProvider">SettingsProvider to use.</param>
+        /// <param name="playerManager">PlayerManager to use.</param>
+        /// <param name="papyrusCsManager">PapyrusCsManager to use.</param>
         public BackupManager(ILog log, ISettingsProvider settingsProvider, IPlayerManager playerManager, IPapyrusCsManager papyrusCsManager)
         {
             _log = log;
@@ -96,7 +96,7 @@
                     var fileSize = Convert.ToInt32(fileTmp[1], CultureInfo.InvariantCulture);
 
                     _log.Info($" - Copying {fileName}...");
-                    Utils.CopyFile(fileName, Path.Combine(tmpDir, fileName), fileSize);
+                    Utils.CopyFile(_log, fileName, Path.Combine(tmpDir, fileName), fileSize);
                 }
                 catch (Exception e)
                 {
@@ -128,7 +128,7 @@
         {
             if (!_hasUserBeenOnlineSinceLastBackup)
             {
-                _log.Info("Skipping scheduled backup since no user has been online since last time.");
+                // Skipping scheduled backup, no user has been online since last time.
                 return;
             }
 

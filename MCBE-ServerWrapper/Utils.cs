@@ -91,16 +91,25 @@
         /// <summary>
         /// Copies a given number of bytes from a file to another file.
         /// </summary>
+        /// <param name="log">Logger to use.</param>
         /// <param name="source">Source file to read from.</param>
         /// <param name="destination">Destination file to write to.</param>
         /// <param name="bytesToRead">Bytes to copy from <paramref name="source"/> to <paramref name="destination"/>.</param>
-        public static void CopyFile(string source, string destination, int bytesToRead)
+        public static void CopyFile(ILog log, string source, string destination, int bytesToRead)
         {
 	        var buffer = new byte[bytesToRead];
 
 	        try
-	        {
-		        Directory.CreateDirectory(Path.GetDirectoryName(destination));
+            {
+                var destinationDirectory = Path.GetDirectoryName(destination);
+
+                if (destinationDirectory == null)
+                {
+                    log?.Error($"Couldn't determine directory of path \"{destination}\".");
+                    return;
+                }
+
+                Directory.CreateDirectory(destinationDirectory);
 	        }
 	        catch (ArgumentException)
 	        {

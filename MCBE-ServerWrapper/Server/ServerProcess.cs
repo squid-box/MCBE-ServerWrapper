@@ -11,6 +11,7 @@
     using AhlSoft.BedrockServerWrapper.Logging;
     using AhlSoft.BedrockServerWrapper.PlayerManagement;
     using AhlSoft.BedrockServerWrapper.Settings;
+
     using Spectre.Console;
 
     /// <inheritdoc cref="IServerProcess" />
@@ -115,19 +116,6 @@
         }
 
         /// <inheritdoc />
-        public void Say(string message)
-        {
-            SendInputToProcess($"say {message}");
-        }
-
-        /// <inheritdoc />
-        public void Backup()
-        {
-            _backupManager.HasBackupBeenInitiated = true;
-            SendInputToProcess("save hold");
-        }
-
-        /// <inheritdoc />
         public void Start()
         {
             if (!IsRunning && Process.GetProcessesByName(Path.GetFileNameWithoutExtension(ServerExecutable)).Length > 0)
@@ -171,7 +159,18 @@
         }
 
         /// <inheritdoc />
-        public void PrintServerValues()
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Say(string message)
+        {
+            SendInputToProcess($"say {message}");
+        }
+
+        private void PrintServerValues()
         {
             // Create a table
             var table = new Table();
@@ -193,11 +192,10 @@
             AnsiConsole.Render(table);
         }
 
-        /// <inheritdoc />
-        public void Dispose()
+        private void Backup()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            _backupManager.HasBackupBeenInitiated = true;
+            SendInputToProcess("save hold");
         }
 
         private void ReceivedStandardOutput(object sender, DataReceivedEventArgs e)

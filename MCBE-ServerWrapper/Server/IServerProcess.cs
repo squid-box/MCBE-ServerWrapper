@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using AhlSoft.BedrockServerWrapper.Backups;
 
     /// <summary>
     /// Wraps the Bedrock server process.
@@ -18,17 +17,14 @@
 
         public void SendInputToProcess(string input);
 
-        public void Say(string message);
-
         /// <summary>
-        /// Initiates a backup.
+        /// Starts the server process.
         /// </summary>
-        public void Backup();
-
         public void Start();
 
+        /// <summary>
+        /// Stops the server process.
+        /// </summary>
         public void Stop();
-
-        public void PrintServerValues();
     }
 }
