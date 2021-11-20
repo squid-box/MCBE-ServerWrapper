@@ -8,7 +8,7 @@
     /// <inheritdoc cref="ILog" />
     public class Log : ILog
     {
-        private static readonly object LogLock = new object();
+        private static readonly object LogLock = new();
 
         private const string LogFilePath = "mcbsw.log";
 
@@ -28,6 +28,19 @@
         public void Error(string message, string color = "red", bool logToConsole = true)
         {
             WriteMessage(" ERR", message, logToConsole, color);
+        }
+
+        /// <inheritdoc />
+        public void Exception(Exception exception, string color = "maroon", bool logToConsole = true)
+        {
+            var count = 0;
+
+            while (exception != null)
+            {
+                WriteMessage("  EX", $"{(count != 0 ? $" {count}. " : string.Empty)}{exception.GetType().Name}: {exception.Message}", logToConsole, color);
+                exception = exception.InnerException;
+                count++;
+            }
         }
 
         private static void WriteMessage(string level, string message, bool logToConsole, string format = "")

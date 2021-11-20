@@ -11,6 +11,7 @@
 
     using Autofac;
     using Spectre.Console;
+    using System.Net.Http;
 
     /// <summary>
     /// Entry point for program.
@@ -42,17 +43,21 @@
                 builder.RegisterType<Log>().As<ILog>().SingleInstance();
                 builder.Register(_ => SettingsProvider.Load()).As<ISettingsProvider>().SingleInstance();
                 builder.RegisterType<PapyrusCsManager>().As<IPapyrusCsManager>().SingleInstance();
+                builder.RegisterType<HttpClient>().SingleInstance();
+                builder.RegisterType<ServerDownloader>().SingleInstance();
+                builder.RegisterType<SelfUpdater>().SingleInstance();
                 builder.RegisterType<PlayerManager>().As<IPlayerManager>().SingleInstance();
                 builder.RegisterType<BackupManager>().As<IBackupManager>().SingleInstance();
                 builder.RegisterType<ServerProcess>().As<IServerProcess>().SingleInstance();
                 Container = builder.Build();
 
                 Log = Container.Resolve<ILog>();
+                var serverDownloader = Container.Resolve<ServerDownloader>();
                 var settings = Container.Resolve<ISettingsProvider>();
 
                 PrintTitle();
 
-                var (updateAvailable, updateVersion, updateUrl) = SelfUpdater.CheckForUpdate(Log);
+                var (updateAvailable, updateVersion, updateUrl) = Container.Resolve<SelfUpdater>().CheckForUpdate();
 
                 if (updateAvailable)
                 {
@@ -64,7 +69,7 @@
                 {
                     Log.Info("Could not find required server files, downloading latest version.");
 
-                    ServerDownloader.GetServerFiles(Log, settings.ServerFolder);
+                    serverDownloader.GetServerFiles(settings.ServerFolder);
 
                     if (!Utils.ValidateServerFiles(settings.ServerFolder))
                     {
@@ -95,7 +100,7 @@
 
                         if (input.Equals("update", StringComparison.OrdinalIgnoreCase))
                         {
-                            CheckForUpdates(serverProcess, settings.ServerFolder);
+                            CheckForUpdates(serverProcess, serverDownloader, settings.ServerFolder);
                         }
                         else if (input.Equals("licensing", StringComparison.OrdinalIgnoreCase))
                         {
@@ -149,10 +154,10 @@
             Log?.Info($"Starting version: {Utils.ProgramVersion}");
         }
 
-        private static void CheckForUpdates(IServerProcess serverProcess, string rootPath)
+        private static void CheckForUpdates(IServerProcess serverProcess, ServerDownloader serverDownloader, string rootPath)
         {
             Log?.Info("Checking for latest Bedrock server version...");
-            var latestVersion = ServerDownloader.FindLatestServerVersion(Log);
+            var latestVersion = serverDownloader.FindLatestServerVersion();
 
             if (
                 latestVersion != null && 
@@ -164,7 +169,7 @@
                     Log?.Info($"Found new version {latestVersion}, stopping server and updating.");
                     serverProcess.Stop();
 
-                    ServerDownloader.GetServerFiles(Log, rootPath);
+                    serverDownloader.GetServerFiles(rootPath);
 
                     serverProcess.Start();
                 }

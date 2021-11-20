@@ -313,7 +313,7 @@
             _log.Error(e.Data);
         }
 
-        private void Help()
+        private static void Help()
         {
             AnsiConsole.MarkupLine("[underline]MCBE-SW commands:[/]");
             AnsiConsole.MarkupLine("* [cornflowerblue]autobackup[/] : Allows you to change automatic backup settings.");
