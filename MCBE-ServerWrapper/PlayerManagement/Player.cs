@@ -85,7 +85,7 @@
         /// <returns>True if <see cref="Player"/>s are unequal, otherwise false.</returns>
         public static bool operator !=(Player player1, Player player2)
         {
-            return !(player1 is null) && !player1.Equals(player2);
+            return player1 is not null && !player1.Equals(player2);
         }
     }
 }

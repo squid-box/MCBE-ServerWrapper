@@ -1,5 +1,7 @@
 ﻿namespace AhlSoft.BedrockServerWrapper.Logging
 {
+    using System;
+
     /// <summary>
     /// Logging class.
     /// </summary>
@@ -28,5 +30,13 @@
         /// <param name="color">Optional color styling override.</param>
         /// <param name="logToConsole">Whether or not message gets logged to console.</param>
         public void Error(string message, string color = "red", bool logToConsole = true);
+
+        /// <summary>
+        /// Log an Exception (and any inner Exceptions).
+        /// </summary>
+        /// <param name="exception">Exception to log.</param>
+        /// <param name="color">Optional color styling override.</param>
+        /// <param name="logToConsole">Whether or not message gets logged to console.</param>
+        public void Exception(Exception exception, string color = "maroon", bool logToConsole = true);
     }
 }

@@ -4,7 +4,7 @@
     using System.Diagnostics;
     using System.IO;
     using System.IO.Compression;
-    using System.Net;
+    using System.Net.Http;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
 
@@ -16,16 +16,18 @@
     {
         private readonly ISettingsProvider _settingsProvider;
         private readonly ILog _log;
+        private readonly HttpClient _httpClient;
 
         /// <summary>
         /// Creates a new <see cref="PapyrusCsManager" />.
         /// </summary>
         /// <param name="settingsProvider">SettingsProvider.</param>
         /// <param name="log">Logger.</param>
-        public PapyrusCsManager(ISettingsProvider settingsProvider, ILog log)
+        public PapyrusCsManager(ISettingsProvider settingsProvider, ILog log, HttpClient httpClient)
         {
             _settingsProvider = settingsProvider;
             _log = log;
+            _httpClient = httpClient;
         }
 
         private string PapyrusCsExecutable => Path.Combine(_settingsProvider.PapyrusFolder, Utils.IsLinux() ? "PapyrusCs" : "PapyrusCs.exe");
@@ -146,27 +148,26 @@
             var target = Utils.IsLinux() ? "-linux64.zip" : "-win64.zip";
             var tempFile = Path.GetTempFileName();
 
-            using (var client = new WebClient())
+            var latestReleaseJson = _httpClient.GetStringAsync(@"https://api.github.com/repos/mjungnickel18/papyruscs/releases/latest").Result;
+
+            var match = Regex.Match(latestReleaseJson, $"^.*browser_download_url.*(https://.*{target})\".*$");
+
+            if (!match.Success)
             {
-                client.Headers.Add("User-Agent", "MCBE-ServerWrapper");
-                var latestReleaseJson = client.DownloadString(@"https://api.github.com/repos/mjungnickel18/papyruscs/releases/latest");
-
-                var match = Regex.Match(latestReleaseJson, $"^.*browser_download_url.*(https://.*{target})\".*$");
-                 
-                if (!match.Success)
-                {
-                    _log.Error("Could not find the latest release of PapyrusCs.");
-                    return;
-                }
-
-                client.DownloadFile(match.Groups[1].Value, tempFile);
-
-                Utils.DeleteDirectory(_settingsProvider.PapyrusFolder, _log);
-
-                ZipFile.ExtractToDirectory(tempFile, _settingsProvider.PapyrusFolder);
-
-                File.Delete(tempFile);
+                _log.Error("Could not find the latest release of PapyrusCs.");
+                return;
             }
+
+            using var downloadStream = _httpClient.GetStreamAsync(match.Groups[1].Value);
+
+            using var fileStream = new FileStream(tempFile, FileMode.CreateNew);
+            downloadStream.Result.CopyTo(fileStream);
+
+            Utils.DeleteDirectory(_settingsProvider.PapyrusFolder, _log);
+
+            ZipFile.ExtractToDirectory(tempFile, _settingsProvider.PapyrusFolder);
+
+            File.Delete(tempFile);
 
             if (Utils.IsLinux())
             {

@@ -4,7 +4,7 @@
     using System.IO;
     using System.IO.Compression;
     using System.Linq;
-    using System.Net;
+    using System.Net.Http;
     using System.Text.RegularExpressions;
     using System.Threading;
 
@@ -13,30 +13,44 @@
     /// <summary>
     /// Utility class for finding and downloading server data.
     /// </summary>
-    public static class ServerDownloader
+    public class ServerDownloader
     {
-        private static readonly Uri ServerDownloadPage = new Uri("https://www.minecraft.net/en-us/download/server/bedrock/");
+        private const string WindowsDownloadRegexPattern = @"(https://minecraft.azureedge.net/bin-win/bedrock-server-.*.zip)";
+        private const string LinuxDownloadRegexPattern = @"(https://minecraft.azureedge.net/bin-linux/bedrock-server-.*.zip)";
+
+        private readonly Uri ServerDownloadPage = new("https://www.minecraft.net/en-us/download/server/bedrock");
+        private readonly ILog _log;
+        private readonly HttpClient _httpClient;
+        
+        public ServerDownloader(ILog log, HttpClient httpClient)
+        {
+            _log = log;
+            _httpClient = httpClient;
+
+            httpClient.DefaultRequestHeaders.UserAgent.TryParseAdd("Mozilla/5.0 (X11; Linux x86_64)");
+            httpClient.DefaultRequestHeaders.AcceptLanguage.TryParseAdd("en-US");
+        }
 
         /// <summary>
         /// Gets appropriate server files and puts them in a given path.
         /// </summary>
         /// <param name="log">Logger to use.</param>
         /// <param name="rootPath">Path to download files to.</param>
-        public static void GetServerFiles(ILog log, string rootPath)
+        public void GetServerFiles(string rootPath)
         {
             if (Utils.IsLinux())
             {
-                if (!DownloadAndUnpackLinuxServer(log, rootPath))
+                if (!DownloadAndUnpackLinuxServer(rootPath))
                 {
-                    log?.Error("Failed to download server, shutting down.");
+                    _log?.Error("Failed to download server, shutting down.");
                     Environment.Exit(ExitCodes.InvalidServerFiles);
                 }
             }
             else
             {
-                if (!DownloadAndUnpackWindowsServer(log, rootPath))
+                if (!DownloadAndUnpackWindowsServer(rootPath))
                 {
-                    log?.Error("Failed to download server, shutting down.");
+                    _log?.Error("Failed to download server, shutting down.");
                     Environment.Exit(ExitCodes.InvalidServerFiles);
                 }
             }
@@ -46,68 +60,65 @@
         /// Determines the latest version of the server available for the current system.
         /// </summary>
         /// <returns>The latest version of the server available.</returns>
-        public static Version FindLatestServerVersion(ILog log)
+        public Version FindLatestServerVersion()
         {
-	        return Utils.IsLinux() ? FindLatestLinuxServerVersion(log) : FindLatestWindowsServerVersion(log);
+	        return FindCurrentVersion(Utils.IsLinux() ? LinuxDownloadRegexPattern : WindowsDownloadRegexPattern);
         }
 
-        private static Version FindLatestWindowsServerVersion(ILog log)
+        private bool DownloadAndUnpackWindowsServer(string targetDirectory)
         {
-            return FindCurrentVersion(log, @"https://minecraft.azureedge.net/bin-win/bedrock-server-(.*).zip");
-        }
-        private static Version FindLatestLinuxServerVersion(ILog log)
-        {
-            return FindCurrentVersion(log, @"https://minecraft.azureedge.net/bin-linux/bedrock-server-(.*).zip");
-        }
-
-        private static bool DownloadAndUnpackWindowsServer(ILog log, string targetDirectory)
-        {
-            log?.Info("Attempting to download Windows server files...");
+            _log?.Info("Attempting to download Windows server files...");
 
             try
             {
-                var serverZip = FindDownloadUrl(@"(https://minecraft.azureedge.net/bin-win/bedrock-server-.*.zip)");
-                return DownloadAndUnzipPackage(log, serverZip, targetDirectory);
+                var serverZip = FindDownloadUrl(WindowsDownloadRegexPattern);
+                return DownloadAndUnzipPackage(serverZip, targetDirectory);
             }
             catch (Exception e)
             {
-                log?.Error($"Couldn't get latest Windows server: {e.GetType()} : {e.Message}");
+                _log?.Error($"Couldn't get latest Windows server.");
+                _log?.Exception(e);
+
                 return false;
             }
         }
 
-        private static bool DownloadAndUnpackLinuxServer(ILog log, string targetDirectory)
+        private bool DownloadAndUnpackLinuxServer(string targetDirectory)
         {
-            log?.Info("Attempting to download Linux server files...");
+            _log?.Info("Attempting to download Linux server files...");
 
             try
             {
-                var serverZip = FindDownloadUrl(@"(https://minecraft.azureedge.net/bin-linux/bedrock-server-.*.zip)");
-                return DownloadAndUnzipPackage(log, serverZip, targetDirectory);
+                var serverZip = FindDownloadUrl(LinuxDownloadRegexPattern);
+                return DownloadAndUnzipPackage(serverZip, targetDirectory);
             }
             catch (Exception e)
             {
-                log?.Error($"Couldn't get latest Linux server: {e.GetType()} : {e.Message}");
+                _log?.Error($"Couldn't get latest Linux server.");
+                _log?.Exception(e);
+
                 return false;
             }
         }
 
-        private static Version FindCurrentVersion(ILog log, string regexPattern)
+        private Version FindCurrentVersion(string regexPattern)
         {
             try
             {
-                using var client = new WebClient();
-                var downloadPageSource = client.DownloadString(ServerDownloadPage);
+                var downloadPageSource = _httpClient.GetStringAsync(ServerDownloadPage).Result;
+
                 return new Version(Regex.Match(downloadPageSource, regexPattern).Groups[1].Value);
             }
             catch (Exception e)
             {
-                log?.Error($"Couldn't determine latest server version:\n{e.GetType()} : {e.Message}");
+                _log?.Error($"Couldn't determine latest server version:");
+                _log?.Exception(e);
+
                 return null;
             }
         }
 
-        private static bool DownloadAndUnzipPackage(ILog log, Uri packageUrl, string targetDirectory)
+        private bool DownloadAndUnzipPackage(Uri packageUrl, string targetDirectory)
         {
             var protectedFiles = new[]
             {
@@ -118,32 +129,30 @@
 
             try
             {
-                using var client = new WebClient();
+                using var downloadStream = _httpClient.GetStreamAsync(packageUrl);
 
-                var done = false;
-                var lastProgress = 0;
-
-                client.DownloadProgressChanged += (s, a) => { lastProgress = a.ProgressPercentage; };
-                client.DownloadFileCompleted += (s, a) => { done = true; };
-
-                var filename = Path.GetTempFileName();
-                var tempBackupDir = Path.Combine(Path.GetTempPath(), "mcbesw_protectedFiles");
-                client.DownloadFileAsync(packageUrl, filename);
-
-                while (!done)
+                while (!downloadStream.IsCompleted)
                 {
-                    log?.Info($"Progress: {lastProgress}%");
+                    _log.Info("Downloading...");
                     Thread.Sleep(1000);
                 }
 
-                log?.Info("Download complete.");
+                var filename = Path.GetTempFileName();
+                var tempBackupDir = Path.Combine(Path.GetTempPath(), "mcbesw_protectedFiles");
+
+                using (var fileStream = new FileStream(filename, FileMode.OpenOrCreate))
+                {
+                    downloadStream.Result.CopyTo(fileStream);
+                }                    
+
+                _log?.Info("Download complete.");
 
                 Directory.CreateDirectory(targetDirectory);
                 Directory.CreateDirectory(tempBackupDir);
 
                 using (var zip = ZipFile.OpenRead(filename))
                 {
-                    log?.Info($"Unzipping {zip.Entries.Count} files...");
+                    _log?.Info($"Unzipping {zip.Entries.Count} files...");
 
                     foreach (var entry in zip.Entries)
                     {
@@ -158,7 +167,7 @@
 
                         if (destinationDirectory == null)
                         {
-                            log?.Error($"Couldn't determine directory of path \"{destination}\".");
+                            _log?.Error($"Couldn't determine directory of path \"{destination}\".");
                             return false;
                         }
 
@@ -174,15 +183,15 @@
                     }
                 }
 
-                log?.Info("Unzip complete.");
+                _log?.Info("Unzip complete.");
 
-                Utils.DeleteDirectory(tempBackupDir, log);
+                Utils.DeleteDirectory(tempBackupDir, _log);
 
                 if (Utils.IsLinux())
                 {
-                    if (!Utils.MakeExecutable(Path.Combine(targetDirectory, ServerProcess.ServerExecutable), log))
+                    if (!Utils.MakeExecutable(Path.Combine(targetDirectory, ServerProcess.ServerExecutable), _log))
                     {
-                        log?.Error("Could not make server program executable.");
+                        _log?.Error("Could not make server program executable.");
 
                         return false;
                     }
@@ -192,15 +201,17 @@
             }
             catch (Exception e)
             {
-                log?.Error($"Couldn't get file \"{packageUrl}\": {e.GetType()} : {e.Message}");
+                _log?.Error($"Couldn't get file \"{packageUrl}\".");
+                _log?.Exception(e);
+
                 return false;
             }
         }
 
-        private static Uri FindDownloadUrl(string regexPattern)
+        private Uri FindDownloadUrl(string regexPattern)
         {
-            using var client = new WebClient();
-            var downloadPageSource = client.DownloadString(ServerDownloadPage);
+            var downloadPageSource = _httpClient.GetStringAsync(ServerDownloadPage).Result;
+
             return new Uri(Regex.Match(downloadPageSource, regexPattern).Groups[1].Value);
         }
     }
