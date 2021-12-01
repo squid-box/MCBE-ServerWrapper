@@ -15,8 +15,8 @@
     /// </summary>
     public class ServerDownloader
     {
-        private const string WindowsDownloadRegexPattern = @"(https://minecraft.azureedge.net/bin-win/bedrock-server-.*.zip)";
-        private const string LinuxDownloadRegexPattern = @"(https://minecraft.azureedge.net/bin-linux/bedrock-server-.*.zip)";
+        private const string WindowsDownloadRegexPattern = @"(https://minecraft.azureedge.net/bin-win/bedrock-server-(.*).zip)";
+        private const string LinuxDownloadRegexPattern = @"(https://minecraft.azureedge.net/bin-linux/bedrock-server-(.*).zip)";
 
         private readonly Uri ServerDownloadPage = new("https://www.minecraft.net/en-us/download/server/bedrock");
         private readonly ILog _log;
@@ -107,7 +107,7 @@
             {
                 var downloadPageSource = _httpClient.GetStringAsync(ServerDownloadPage).Result;
 
-                return new Version(Regex.Match(downloadPageSource, regexPattern).Groups[1].Value);
+                return new Version(Regex.Match(downloadPageSource, regexPattern).Groups[2].Value);
             }
             catch (Exception e)
             {
