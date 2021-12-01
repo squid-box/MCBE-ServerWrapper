@@ -15,7 +15,10 @@
     /// </summary>
     public class ServerDownloader
     {
-        private readonly Uri ServerDownloadPage = new("https://www.minecraft.net/en-us/download/server/bedrock/");
+        private const string WindowsDownloadRegexPattern = @"(https://minecraft.azureedge.net/bin-win/bedrock-server-.*.zip)";
+        private const string LinuxDownloadRegexPattern = @"(https://minecraft.azureedge.net/bin-linux/bedrock-server-.*.zip)";
+
+        private readonly Uri ServerDownloadPage = new("https://www.minecraft.net/en-us/download/server/bedrock");
         private readonly ILog _log;
         private readonly HttpClient _httpClient;
         
@@ -23,6 +26,9 @@
         {
             _log = log;
             _httpClient = httpClient;
+
+            httpClient.DefaultRequestHeaders.UserAgent.TryParseAdd("Mozilla/5.0 (X11; Linux x86_64)");
+            httpClient.DefaultRequestHeaders.AcceptLanguage.TryParseAdd("en-US");
         }
 
         /// <summary>
@@ -56,16 +62,7 @@
         /// <returns>The latest version of the server available.</returns>
         public Version FindLatestServerVersion()
         {
-	        return Utils.IsLinux() ? FindLatestLinuxServerVersion() : FindLatestWindowsServerVersion();
-        }
-
-        private Version FindLatestWindowsServerVersion()
-        {
-            return FindCurrentVersion(@"https://minecraft.azureedge.net/bin-win/bedrock-server-(.*).zip");
-        }
-        private Version FindLatestLinuxServerVersion()
-        {
-            return FindCurrentVersion(@"https://minecraft.azureedge.net/bin-linux/bedrock-server-(.*).zip");
+	        return FindCurrentVersion(Utils.IsLinux() ? LinuxDownloadRegexPattern : WindowsDownloadRegexPattern);
         }
 
         private bool DownloadAndUnpackWindowsServer(string targetDirectory)
@@ -74,7 +71,7 @@
 
             try
             {
-                var serverZip = FindDownloadUrl(@"(https://minecraft.azureedge.net/bin-win/bedrock-server-.*.zip)");
+                var serverZip = FindDownloadUrl(WindowsDownloadRegexPattern);
                 return DownloadAndUnzipPackage(serverZip, targetDirectory);
             }
             catch (Exception e)
@@ -92,7 +89,7 @@
 
             try
             {
-                var serverZip = FindDownloadUrl(@"(https://minecraft.azureedge.net/bin-linux/bedrock-server-.*.zip)");
+                var serverZip = FindDownloadUrl(LinuxDownloadRegexPattern);
                 return DownloadAndUnzipPackage(serverZip, targetDirectory);
             }
             catch (Exception e)
@@ -143,8 +140,10 @@
                 var filename = Path.GetTempFileName();
                 var tempBackupDir = Path.Combine(Path.GetTempPath(), "mcbesw_protectedFiles");
 
-                using var fileStream = new FileStream(filename, FileMode.CreateNew);
-                downloadStream.Result.CopyTo(fileStream);
+                using (var fileStream = new FileStream(filename, FileMode.OpenOrCreate))
+                {
+                    downloadStream.Result.CopyTo(fileStream);
+                }                    
 
                 _log?.Info("Download complete.");
 
