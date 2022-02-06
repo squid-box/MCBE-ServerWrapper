@@ -6,6 +6,7 @@
     using System.IO.Compression;
     using System.Net.Http;
     using System.Text.RegularExpressions;
+    using System.Threading;
     using System.Threading.Tasks;
 
     using AhlSoft.BedrockServerWrapper.Logging;
@@ -45,65 +46,62 @@
                 return;
             }
 
-            Task.Run(() =>
+            _log.Info("Map generation starting.");
+
+            var worldFolder = Path.Combine(tempFolder, _settingsProvider.ServerFolder, "worlds", _settingsProvider.LevelName);
+
+            if (!Directory.Exists(worldFolder))
             {
-                _log.Info("Map generation starting.");
+                _log.Error("World folder could not be found.");
+                return;
+            }
 
-                var worldFolder = Path.Combine(tempFolder, _settingsProvider.ServerFolder, "worlds", _settingsProvider.LevelName);
-
-                if (!Directory.Exists(worldFolder))
-                {
-                    _log.Error("World folder could not be found.");
-                    return;
-                }
-
-                if (!IsPapyrusCsAvailable)
-                {
-                    try
-                    {
-                        InstallPapyrusCs();
-                    }
-                    catch (Exception e)
-                    {
-                        _log.Error($"Could not install Papyrus. Exception: {e.GetType()}: {e.Message}");
-                        return;
-                    }
-                }
-
-                GenerateDimensionMap(worldFolder, 0);
-                GenerateDimensionMap(worldFolder, 1);
-                GenerateDimensionMap(worldFolder, 2);
-
-                _log.Info("Map generation done.");
-
+            if (!IsPapyrusCsAvailable)
+            {
                 try
                 {
-                    Utils.DeleteDirectory(tempFolder, _log);
+                    InstallPapyrusCs();
                 }
                 catch (Exception e)
                 {
-                    _log.Error($"Couldn't delete temporary files. {e.GetType()}: {e.Message}");
+                    _log.Error($"Could not install Papyrus. Exception: {e.GetType()}: {e.Message}");
+                    return;
                 }
+            }
 
-                if (!string.IsNullOrEmpty(_settingsProvider.PapyrusPostRunCommand))
+            GenerateDimensionMap(worldFolder, 0);
+            GenerateDimensionMap(worldFolder, 1);
+            GenerateDimensionMap(worldFolder, 2);
+
+            _log.Info("Map generation done.");
+
+            try
+            {
+                Utils.DeleteDirectory(tempFolder, _log);
+            }
+            catch (Exception e)
+            {
+                _log.Error($"Couldn't delete temporary files. {e.GetType()}: {e.Message}");
+            }
+
+            if (!string.IsNullOrEmpty(_settingsProvider.PapyrusPostRunCommand))
+            {
+                using var process = new Process
                 {
-                    using var process = new Process
+                    StartInfo = new ProcessStartInfo
                     {
-                        StartInfo = new ProcessStartInfo
-                        {
-                            FileName = Utils.IsLinux() ? "/bin/bash" : "cmd.exe",
-                            Arguments = $"{(Utils.IsLinux() ? "-c" : "/C")} \"{_settingsProvider.PapyrusPostRunCommand}\"",
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        }
-                    };
+                        FileName = Utils.IsLinux() ? "/bin/bash" : "cmd.exe",
+                        Arguments = $"{(Utils.IsLinux() ? "-c" : "/C")} \"{_settingsProvider.PapyrusPostRunCommand}\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
 
-                    process.Start();
-                    process.WaitForExit();
+                process.Start();
+                process.WaitForExit();
 
-                    _log.Info($"Map generation PostRunCommand executed with {process.ExitCode}.");
-                }
-            });
+                _log.Info($"Map generation PostRunCommand executed with {process.ExitCode}.");
+            }
         }
 
         private void GenerateDimensionMap(string worldFolder, int dimension)
@@ -160,13 +158,19 @@
 
             using var downloadStream = _httpClient.GetStreamAsync(match.Groups[1].Value);
 
-            using var fileStream = new FileStream(tempFile, FileMode.CreateNew);
-            downloadStream.Result.CopyTo(fileStream);
+            while (!downloadStream.IsCompleted)
+            {
+                _log.Info("Downloading PapyrusCs...");
+                Thread.Sleep(1000);
+            }
 
+            using (var fileStream = new FileStream(tempFile, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+            {
+                downloadStream.Result.CopyTo(fileStream);
+            }
+            
             Utils.DeleteDirectory(_settingsProvider.PapyrusFolder, _log);
-
             ZipFile.ExtractToDirectory(tempFile, _settingsProvider.PapyrusFolder);
-
             File.Delete(tempFile);
 
             if (Utils.IsLinux())

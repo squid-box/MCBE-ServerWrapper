@@ -1,12 +1,12 @@
 variables:
-  VER_PREFIX: '1.1.1'
+  VER_PREFIX: '1.1.2'
   EXE_RELEASE_FOLDER: 'Stage/Release'
   JFROG_CLI_BUILD_NUMBER: '${VER_PREFIX}.${CI_PIPELINE_IID}'
 
 stages:
   - build
 
-windows:
+build:
   stage: 'build'
   dependencies: []
   tags:
