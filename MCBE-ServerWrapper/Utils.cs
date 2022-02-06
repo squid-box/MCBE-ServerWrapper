@@ -35,7 +35,6 @@
             if (IsLinux())
             {
                 requiredFiles.Add(Path.Combine(rootDirectory, "bedrock_server"));
-                requiredFiles.Add(Path.Combine(rootDirectory, "libCrypto.so"));
             }
             else
             {

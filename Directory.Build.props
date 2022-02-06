@@ -8,6 +8,6 @@
     <OutputPath>$(Stage)\$(Configuration)\</OutputPath>
     <BaseIntermediateOutputPath>$(Stage)\obj</BaseIntermediateOutputPath>
     <IntermediateOutputPath>$(BaseIntermediateOutputPath)\$(Configuration)\$(Platform)\$(MSBuildProjectFile)</IntermediateOutputPath>
-    <Copyright>Copyright © AhlSoft 2021</Copyright>
+    <Copyright>Copyright © AhlSoft 2022</Copyright>
   </PropertyGroup>
 </Project>
