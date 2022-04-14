@@ -1,24 +1,23 @@
-﻿namespace AhlSoft.BedrockServerWrapper.PlayerManagement
+﻿namespace AhlSoft.BedrockServerWrapper.PlayerManagement;
+
+using System;
+
+/// <summary>
+/// Information about a player connecting.
+/// </summary>
+public class PlayerConnectionEventArgs : EventArgs
 {
-    using System;
+    /// <summary>
+    /// Creates a new <see cref="PlayerConnectionEventArgs"/>.
+    /// </summary>
+    /// <param name="player">The <see cref="Player"/> that has connected.</param>
+    public PlayerConnectionEventArgs(Player player)
+    {
+        Player = player;
+    }
 
     /// <summary>
-    /// Information about a player connecting.
+    /// The <see cref="Player"/> that has connected.
     /// </summary>
-    public class PlayerConnectionEventArgs : EventArgs
-    {
-        /// <summary>
-        /// Creates a new <see cref="PlayerConnectionEventArgs"/>.
-        /// </summary>
-        /// <param name="player">The <see cref="Player"/> that has connected.</param>
-        public PlayerConnectionEventArgs(Player player)
-        {
-            Player = player;
-        }
-
-        /// <summary>
-        /// The <see cref="Player"/> that has connected.
-        /// </summary>
-        public Player Player { get; }
-    }
+    public Player Player { get; }
 }

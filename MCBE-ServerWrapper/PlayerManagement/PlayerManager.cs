@@ -1,134 +1,133 @@
-﻿namespace AhlSoft.BedrockServerWrapper.PlayerManagement
+﻿namespace AhlSoft.BedrockServerWrapper.PlayerManagement;
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+using AhlSoft.BedrockServerWrapper.Logging;
+
+using Newtonsoft.Json;
+
+/// <inheritdoc cref="IPlayerManager" />
+public class PlayerManager : IPlayerManager
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
+    private const string PlayerTimeLogFile = @"playertime.json";
+    private const string PlayerSeenLogFile = @"playerseen.json";
+    private readonly ILog _log;
 
-    using AhlSoft.BedrockServerWrapper.Logging;
-
-    using Newtonsoft.Json;
-
-    /// <inheritdoc cref="IPlayerManager" />
-    public class PlayerManager : IPlayerManager
+    public PlayerManager(ILog log)
     {
-        private const string PlayerTimeLogFile = @"playertime.json";
-        private const string PlayerSeenLogFile = @"playerseen.json";
-        private readonly ILog _log;
+        _log = log;
+        _online = new Dictionary<Player, DateTime>();
+        _timeLog = LoadTimeLog();
+        _lastSeenLog = LoadSeenLog();
+    }
 
-        public PlayerManager(ILog log)
+    /// <inheritdoc />
+    public event EventHandler<PlayerConnectionEventArgs> PlayerConnected;
+
+    /// <summary>
+    /// Collection of currently online <see cref="Player"/> and when they logged in.
+    /// </summary>
+    private readonly Dictionary<Player, DateTime> _online;
+
+    private readonly Dictionary<string, DateTime> _lastSeenLog;
+
+    /// <summary>
+    /// Log of how many minutes <see cref="Player"/>s have played so far.
+    /// </summary>
+    private readonly Dictionary<string, int> _timeLog;
+
+    /// <inheritdoc />
+    public int GetPlayedMinutes(Player player)
+    {
+        if (!_timeLog.ContainsKey(player.Name))
         {
-            _log = log;
-            _online = new Dictionary<Player, DateTime>();
-            _timeLog = LoadTimeLog();
-            _lastSeenLog = LoadSeenLog();
+            return -1;
         }
 
-        /// <inheritdoc />
-        public event EventHandler<PlayerConnectionEventArgs> PlayerConnected;
+        return _timeLog[player.Name];
+    }
 
-        /// <summary>
-        /// Collection of currently online <see cref="Player"/> and when they logged in.
-        /// </summary>
-        private readonly Dictionary<Player, DateTime> _online;
+    /// <inheritdoc />
+    public DateTime GetLastSeen(Player player)
+    {
+        return !_lastSeenLog.ContainsKey(player.Name) ? 
+            DateTime.MinValue : 
+            _lastSeenLog[player.Name];
+    }
 
-        private readonly Dictionary<string, DateTime> _lastSeenLog;
-
-        /// <summary>
-        /// Log of how many minutes <see cref="Player"/>s have played so far.
-        /// </summary>
-        private readonly Dictionary<string, int> _timeLog;
-
-        /// <inheritdoc />
-        public int GetPlayedMinutes(Player player)
+    /// <inheritdoc />
+    public void PlayerLeft(Player player)
+    {
+        if (!_online.ContainsKey(player))
         {
-            if (!_timeLog.ContainsKey(player.Name))
-            {
-                return -1;
-            }
-
-            return _timeLog[player.Name];
+            _log.Warning($"Player \"{player}\" was not logged in!");
+            return;
         }
 
-        /// <inheritdoc />
-        public DateTime GetLastSeen(Player player)
+        if (!_timeLog.ContainsKey(player.Name))
         {
-            return !_lastSeenLog.ContainsKey(player.Name) ? 
-                DateTime.MinValue : 
-                _lastSeenLog[player.Name];
+            _timeLog.Add(player.Name, 0);
         }
 
-        /// <inheritdoc />
-        public void PlayerLeft(Player player)
+        _lastSeenLog[player.Name] = DateTime.Now;
+
+        _timeLog[player.Name] += Convert.ToInt32(Math.Ceiling((DateTime.UtcNow - _online[player]).TotalMinutes));
+        _online.Remove(player);
+
+        SaveTimeLog();
+        SaveSeenLog();
+    }
+
+    /// <inheritdoc />
+    public void PlayerJoined(Player player)
+    {
+        if (_online.ContainsKey(player))
         {
-            if (!_online.ContainsKey(player))
-            {
-                _log.Warning($"Player \"{player}\" was not logged in!");
-                return;
-            }
-
-            if (!_timeLog.ContainsKey(player.Name))
-            {
-                _timeLog.Add(player.Name, 0);
-            }
-
-            _lastSeenLog[player.Name] = DateTime.Now;
-
-            _timeLog[player.Name] += Convert.ToInt32(Math.Ceiling((DateTime.UtcNow - _online[player]).TotalMinutes));
+            _log.Warning($"Player \"{player}\" already logged in!");
             _online.Remove(player);
-
-            SaveTimeLog();
-            SaveSeenLog();
         }
 
-        /// <inheritdoc />
-        public void PlayerJoined(Player player)
+        _online.Add(player, DateTime.UtcNow);
+
+        PlayerConnected?.Invoke(this, new PlayerConnectionEventArgs(player));
+    }
+
+    /// <inheritdoc />
+    public int UsersOnline => _online.Count;
+
+    private Dictionary<string, int> LoadTimeLog()
+    {
+        if (File.Exists(PlayerTimeLogFile))
         {
-            if (_online.ContainsKey(player))
-            {
-                _log.Warning($"Player \"{player}\" already logged in!");
-                _online.Remove(player);
-            }
-
-            _online.Add(player, DateTime.UtcNow);
-
-            PlayerConnected?.Invoke(this, new PlayerConnectionEventArgs(player));
+            _log.Info("Loading player time log from file.");
+            return JsonConvert.DeserializeObject<Dictionary<string, int>>(File.ReadAllText(PlayerTimeLogFile));
         }
 
-        /// <inheritdoc />
-        public int UsersOnline => _online.Count;
+        _log.Info("No player time log found, creating new.");
+        return new Dictionary<string, int>();
+    }
 
-        private Dictionary<string, int> LoadTimeLog()
+    private Dictionary<string, DateTime> LoadSeenLog()
+    {
+        if (File.Exists(PlayerSeenLogFile))
         {
-            if (File.Exists(PlayerTimeLogFile))
-            {
-                _log.Info("Loading player time log from file.");
-                return JsonConvert.DeserializeObject<Dictionary<string, int>>(File.ReadAllText(PlayerTimeLogFile));
-            }
-
-            _log.Info("No player time log found, creating new.");
-            return new Dictionary<string, int>();
+            _log.Info("Loading player seen log from file.");
+            return JsonConvert.DeserializeObject<Dictionary<string, DateTime>>(File.ReadAllText(PlayerSeenLogFile));
         }
 
-        private Dictionary<string, DateTime> LoadSeenLog()
-        {
-            if (File.Exists(PlayerSeenLogFile))
-            {
-                _log.Info("Loading player seen log from file.");
-                return JsonConvert.DeserializeObject<Dictionary<string, DateTime>>(File.ReadAllText(PlayerSeenLogFile));
-            }
+        _log.Info("No player seen log found, creating new.");
+        return new Dictionary<string, DateTime>();
+    }
 
-            _log.Info("No player seen log found, creating new.");
-            return new Dictionary<string, DateTime>();
-        }
+    private void SaveTimeLog()
+    {
+        File.WriteAllText(PlayerTimeLogFile, JsonConvert.SerializeObject(_timeLog, Formatting.Indented));
+    }
 
-        private void SaveTimeLog()
-        {
-            File.WriteAllText(PlayerTimeLogFile, JsonConvert.SerializeObject(_timeLog, Formatting.Indented));
-        }
-
-        private void SaveSeenLog()
-        {
-            File.WriteAllText(PlayerSeenLogFile, JsonConvert.SerializeObject(_lastSeenLog, Formatting.Indented));
-        }
+    private void SaveSeenLog()
+    {
+        File.WriteAllText(PlayerSeenLogFile, JsonConvert.SerializeObject(_lastSeenLog, Formatting.Indented));
     }
 }
