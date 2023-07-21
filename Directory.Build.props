@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
     <Stage>$(SolutionDir)\Stage</Stage>
     <OutputPath>$(Stage)\$(Configuration)\</OutputPath>
     <BaseIntermediateOutputPath>$(Stage)\obj</BaseIntermediateOutputPath>
     <IntermediateOutputPath>$(BaseIntermediateOutputPath)\$(Configuration)\$(Platform)\$(MSBuildProjectFile)</IntermediateOutputPath>
-    <Copyright>Copyright © AhlSoft 2022</Copyright>
+    <Copyright>Copyright © AhlSoft 2023</Copyright>
   </PropertyGroup>
 </Project>

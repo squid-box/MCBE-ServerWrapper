@@ -146,7 +146,7 @@ public static class Program
     {
         var titleRule = new Rule("[lightseagreen]Minecraft Bedrock Dedicated Server Wrapper[/]")
         {
-            Alignment = Justify.Center,
+            Justification = Justify.Center,
             Style = Style.Parse("lightseagreen")
         };
 

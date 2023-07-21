@@ -28,6 +28,7 @@ public class SelfUpdater
     /// <returns>True if an update exists.</returns>
     public (bool updateAvailable, Version remoteVersion, string updateUrl) CheckForUpdate()
     {
+        // TODO: Change to GitHub releases
         const string baseUrl = "https://artifactory.ahlgren.io/artifactory/api/storage/mcbesw/master";
 
         try
