@@ -19,8 +19,7 @@ public static class Utils
     /// <returns>True if running on Linux, otherwise false.</returns>
     public static bool IsLinux()
     {
-        var p = (int)Environment.OSVersion.Platform;
-        return p == 4 || p == 6 || p == 128;
+        return (int)Environment.OSVersion.Platform is 4 or 6 or 128;
     }
 
     /// <summary>
@@ -30,16 +29,12 @@ public static class Utils
     /// <returns>True if expected files are present, otherwise false.</returns>
     public static bool ValidateServerFiles(string rootDirectory)
     {
-        var requiredFiles = new List<string>();
-
-        if (IsLinux())
+        var requiredFiles = new List<string>
         {
-            requiredFiles.Add(Path.Combine(rootDirectory, "bedrock_server"));
-        }
-        else
-        {
-            requiredFiles.Add(Path.Combine(rootDirectory, "bedrock_server.exe"));
-        }
+            IsLinux()
+                ? Path.Combine(rootDirectory, "bedrock_server")
+                : Path.Combine(rootDirectory, "bedrock_server.exe")
+        };
 
         return requiredFiles.All(File.Exists);
     }
@@ -75,16 +70,15 @@ public static class Utils
         }
 
         try
-	        {
+	    {
             Directory.Delete(dir, true);
             return true;
-
         }
-	        catch (Exception e)
-	        {
-		        log?.Error($"Couldn't delete files/folder: {e.GetType()} - {e.Message}");
-		        return false;
-	        }
+	    catch (Exception exception)
+	    {
+		    log?.Error($"Couldn't delete files/folder: {exception.GetType()} - {exception.Message}");
+		    return false;
+	    }
     }
 
     /// <summary>
@@ -96,9 +90,9 @@ public static class Utils
     /// <param name="bytesToRead">Bytes to copy from <paramref name="source"/> to <paramref name="destination"/>.</param>
     public static void CopyFile(ILog log, string source, string destination, int bytesToRead)
     {
-	        var buffer = new byte[bytesToRead];
+	    var buffer = new byte[bytesToRead];
 
-	        try
+	    try
         {
             var destinationDirectory = Path.GetDirectoryName(destination);
 
@@ -109,18 +103,18 @@ public static class Utils
             }
 
             Directory.CreateDirectory(destinationDirectory);
-	        }
-	        catch (ArgumentException)
-	        {
-		        // There's no directory in destination path, so nothing to create here.
-	        }
+	    }
+	    catch (ArgumentException)
+	    {
+		    // There's no directory in destination path, so nothing to create here.
+	    }
 
-	        using (var reader = new BinaryReader(new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
-	        {
-		        reader.Read(buffer, 0, bytesToRead);
-	        }
+	    using (var reader = new BinaryReader(new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
+	    {
+		    reader.Read(buffer, 0, bytesToRead);
+	    }
 
-	        File.WriteAllBytes(destination, buffer);
+	    File.WriteAllBytes(destination, buffer);
     }
 
     /// <summary>

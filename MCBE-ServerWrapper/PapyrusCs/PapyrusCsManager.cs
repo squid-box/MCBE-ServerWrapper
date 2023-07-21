@@ -21,8 +21,9 @@ public class PapyrusCsManager : IPapyrusCsManager
     /// <summary>
     /// Creates a new <see cref="PapyrusCsManager" />.
     /// </summary>
-    /// <param name="settingsProvider">SettingsProvider.</param>
-    /// <param name="log">Logger.</param>
+    /// <param name="settingsProvider">SettingsProvider to use.</param>
+    /// <param name="log">Logger to use.</param>
+    /// <param name="httpClient">HttpClient to use.</param>
     public PapyrusCsManager(ISettingsProvider settingsProvider, ILog log, HttpClient httpClient)
     {
         _settingsProvider = settingsProvider;
@@ -61,9 +62,9 @@ public class PapyrusCsManager : IPapyrusCsManager
             {
                 InstallPapyrusCs();
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                _log.Error($"Could not install Papyrus. Exception: {e.GetType()}: {e.Message}");
+                _log.Error($"Could not install Papyrus. Exception: {exception.GetType()}: {exception.Message}");
                 return;
             }
         }
@@ -78,9 +79,9 @@ public class PapyrusCsManager : IPapyrusCsManager
         {
             Utils.DeleteDirectory(tempFolder, _log);
         }
-        catch (Exception e)
+        catch (Exception exception)
         {
-            _log.Error($"Couldn't delete temporary files. {e.GetType()}: {e.Message}");
+            _log.Error($"Couldn't delete temporary files. {exception.GetType()}: {exception.Message}");
         }
 
         if (!string.IsNullOrEmpty(_settingsProvider.PapyrusPostRunCommand))

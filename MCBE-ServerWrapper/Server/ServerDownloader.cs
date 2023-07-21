@@ -18,7 +18,7 @@ public class ServerDownloader
     private const string WindowsDownloadRegexPattern = @"(https://minecraft.azureedge.net/bin-win/bedrock-server-(.*).zip)";
     private const string LinuxDownloadRegexPattern = @"(https://minecraft.azureedge.net/bin-linux/bedrock-server-(.*).zip)";
 
-    private readonly Uri ServerDownloadPage = new("https://www.minecraft.net/en-us/download/server/bedrock");
+    private readonly Uri _serverDownloadPage = new("https://www.minecraft.net/en-us/download/server/bedrock");
     private readonly ILog _log;
     private readonly HttpClient _httpClient;
     
@@ -34,7 +34,6 @@ public class ServerDownloader
     /// <summary>
     /// Gets appropriate server files and puts them in a given path.
     /// </summary>
-    /// <param name="log">Logger to use.</param>
     /// <param name="rootPath">Path to download files to.</param>
     public void GetServerFiles(string rootPath)
     {
@@ -62,7 +61,7 @@ public class ServerDownloader
     /// <returns>The latest version of the server available.</returns>
     public Version FindLatestServerVersion()
     {
-	        return FindCurrentVersion(Utils.IsLinux() ? LinuxDownloadRegexPattern : WindowsDownloadRegexPattern);
+	    return FindCurrentVersion(Utils.IsLinux() ? LinuxDownloadRegexPattern : WindowsDownloadRegexPattern);
     }
 
     private bool DownloadAndUnpackWindowsServer(string targetDirectory)
@@ -74,10 +73,10 @@ public class ServerDownloader
             var serverZip = FindDownloadUrl(WindowsDownloadRegexPattern);
             return DownloadAndUnzipPackage(serverZip, targetDirectory);
         }
-        catch (Exception e)
+        catch (Exception exception)
         {
-            _log?.Error($"Couldn't get latest Windows server.");
-            _log?.Exception(e);
+            _log?.Error("Couldn't get latest Windows server.");
+            _log?.Exception(exception);
 
             return false;
         }
@@ -92,10 +91,10 @@ public class ServerDownloader
             var serverZip = FindDownloadUrl(LinuxDownloadRegexPattern);
             return DownloadAndUnzipPackage(serverZip, targetDirectory);
         }
-        catch (Exception e)
+        catch (Exception exception)
         {
-            _log?.Error($"Couldn't get latest Linux server.");
-            _log?.Exception(e);
+            _log?.Error("Couldn't get latest Linux server.");
+            _log?.Exception(exception);
 
             return false;
         }
@@ -105,14 +104,14 @@ public class ServerDownloader
     {
         try
         {
-            var downloadPageSource = _httpClient.GetStringAsync(ServerDownloadPage).Result;
+            var downloadPageSource = _httpClient.GetStringAsync(_serverDownloadPage).Result;
 
             return new Version(Regex.Match(downloadPageSource, regexPattern).Groups[2].Value);
         }
-        catch (Exception e)
+        catch (Exception exception)
         {
-            _log?.Error($"Couldn't determine latest server version:");
-            _log?.Exception(e);
+            _log?.Error("Couldn't determine latest server version:");
+            _log?.Exception(exception);
 
             return null;
         }
@@ -199,10 +198,10 @@ public class ServerDownloader
 
             return true;
         }
-        catch (Exception e)
+        catch (Exception exception)
         {
             _log?.Error($"Couldn't get file \"{packageUrl}\".");
-            _log?.Exception(e);
+            _log?.Exception(exception);
 
             return false;
         }
@@ -210,7 +209,7 @@ public class ServerDownloader
 
     private Uri FindDownloadUrl(string regexPattern)
     {
-        var downloadPageSource = _httpClient.GetStringAsync(ServerDownloadPage).Result;
+        var downloadPageSource = _httpClient.GetStringAsync(_serverDownloadPage).Result;
 
         return new Uri(Regex.Match(downloadPageSource, regexPattern).Groups[1].Value);
     }

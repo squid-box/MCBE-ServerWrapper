@@ -40,12 +40,12 @@ public class BackupManager : IBackupManager, IDisposable
         HasBackupBeenInitiated = false;
         _hasUserBeenOnlineSinceLastBackup = false;
 
-        _playerManager.PlayerConnected += (_, __) => _hasUserBeenOnlineSinceLastBackup = true;
+        _playerManager.PlayerConnected += (_, _) => _hasUserBeenOnlineSinceLastBackup = true;
 
         BuildScheduledBackupTimer();
 
-        _settingsProvider.AutomaticBackupEnabledChanged += (_, __) => BuildScheduledBackupTimer();
-        _settingsProvider.AutomaticBackupFrequencyChanged += (_, __) => BuildScheduledBackupTimer();
+        _settingsProvider.AutomaticBackupEnabledChanged += (_, _) => BuildScheduledBackupTimer();
+        _settingsProvider.AutomaticBackupFrequencyChanged += (_, _) => BuildScheduledBackupTimer();
     }
 
     /// <inheritdoc />
@@ -98,9 +98,9 @@ public class BackupManager : IBackupManager, IDisposable
                 _log.Info($" - Copying {fileName}...");
                 Utils.CopyFile(_log, fileName, Path.Combine(tmpDir, fileName), fileSize);
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                _log.Error($"Backup failed: {e.GetType()}: {e.Message}");
+                _log.Error($"Backup failed: {exception.GetType()}: {exception.Message}");
                 Utils.DeleteDirectory(tmpDir, _log);
                 HasBackupBeenInitiated = false;
 
@@ -188,9 +188,9 @@ public class BackupManager : IBackupManager, IDisposable
                 _log.Info($"Deleting backup file \"{file}\".");
                 File.Delete(file);
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                _log.Warning($"Could not delete file: {e.GetType()} - {e.Message}");
+                _log.Warning($"Could not delete file: {exception.GetType()} - {exception.Message}");
             }
             
         }

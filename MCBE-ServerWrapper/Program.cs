@@ -1,6 +1,7 @@
 ﻿namespace AhlSoft.BedrockServerWrapper;
 
 using System;
+using System.Net.Http;
 
 using AhlSoft.BedrockServerWrapper.Backups;
 using AhlSoft.BedrockServerWrapper.Logging;
@@ -8,10 +9,8 @@ using AhlSoft.BedrockServerWrapper.PapyrusCs;
 using AhlSoft.BedrockServerWrapper.PlayerManagement;
 using AhlSoft.BedrockServerWrapper.Settings;
 using AhlSoft.BedrockServerWrapper.Server;
-
 using Autofac;
 using Spectre.Console;
-using System.Net.Http;
 
 /// <summary>
 /// Entry point for program.
@@ -117,12 +116,12 @@ public static class Program
 
             Environment.Exit(ExitCodes.Ok);
         }
-        catch (Exception e)
+        catch (Exception exception)
         {
-            var message = $"Unhandled exception. {e.GetType()}: {e.Message}";
+            var message = $"Unhandled exception. {exception.GetType()}: {exception.Message}";
 
             Log?.Error(message, "red", false);
-            AnsiConsole.WriteException(e);
+            AnsiConsole.WriteException(exception);
 
             try
             {

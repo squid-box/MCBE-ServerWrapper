@@ -1,0 +1,31 @@
+name: Build Minecraft Bedrock Server Wrapper
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  FULL_VERSION: 1.3.1.${{github.run_number}}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '7.x'
+
+    - run: dotnet publish --configuration Release --nologo -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -p:Version=${{env.FULL_VERSION}} --runtime win-x64
+    - run: dotnet publish --configuration Release --nologo -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -p:Version=${{env.FULL_VERSION}} --runtime linux-x64
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: MCBSW_${{env.FULL_VERSION}}_win-x64
+        path: Stage/Release/win-x64/publish/*
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: MCBSW_${{env.FULL_VERSION}}_linux-x64
+        path: Stage/Release/linux-x64/publish/*

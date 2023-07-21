@@ -13,8 +13,15 @@ public interface IServerProcess : IDisposable
     /// </summary>
     public Dictionary<string, string> ServerValues { get; }
 
+    /// <summary>
+    /// Gets a value indicating whether the underlying server process is running or not.
+    /// </summary>
     public bool IsRunning { get; }
 
+    /// <summary>
+    /// Sends given input to the underlying server process.
+    /// </summary>
+    /// <param name="input">Input to send.</param>
     public void SendInputToProcess(string input);
 
     /// <summary>

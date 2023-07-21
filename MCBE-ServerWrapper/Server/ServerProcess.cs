@@ -56,7 +56,7 @@ public class ServerProcess : IServerProcess
         
         _backupManager = backupManager;
         _backupManager.BackupCompleted += BackupCompleted;
-        _backupManager.ScheduledBackup += (_, __) => Backup();
+        _backupManager.ScheduledBackup += (_, _) => Backup();
     }
 
     /// <summary>
@@ -372,9 +372,9 @@ public class ServerProcess : IServerProcess
                 {
                     _settingsProvider.AutomaticBackupFrequency = Convert.ToInt32(splitTemp[2]);
                 }
-                catch (Exception e)
+                catch (Exception exception)
                 {
-                    AnsiConsole.MarkupLine($"Could not convert \"{splitTemp[2]}\" to an integer. {e.GetType()}: {e.Message}");
+                    AnsiConsole.MarkupLine($"Could not convert \"{splitTemp[2]}\" to an integer. {exception.GetType()}: {exception.Message}");
                 }
 
                 break;
@@ -388,16 +388,16 @@ public class ServerProcess : IServerProcess
     /// Dispose all resources.
     /// </summary>
     /// <param name="disposing">Whether or not we're disposing.</param>
-		protected virtual void Dispose(bool disposing)
+	protected virtual void Dispose(bool disposing)
+	{
+		if (disposing)
 		{
-			if (disposing)
-			{
             _settingsProvider.Save();
 
             _backupManager.BackupCompleted -= BackupCompleted;
 
             _cancellationTokenSource?.Dispose();
             _serverProcess?.Dispose();
-			}
+		}
     }
 }
