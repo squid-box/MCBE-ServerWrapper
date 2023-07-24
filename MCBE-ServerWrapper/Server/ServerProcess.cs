@@ -292,7 +292,7 @@ public class ServerProcess : IServerProcess
 
         if (e.Data.Contains("Version") && !ServerValues.ContainsKey("ServerVersion"))
         {
-            ServerValues["ServerVersion"] = Regex.Match(e.Data, @".*Version (\d+\.\d+\.\d+\.\d+)").Groups[1].Value;
+            ServerValues["ServerVersion"] = Regex.Match(e.Data, @".*Version: (\d+\.\d+\.\d+\.\d+)").Groups[1].Value;
         }
 
         if (e.Data.Contains("IPv4 supported") && !ServerValues.ContainsKey("IpV4Port"))
