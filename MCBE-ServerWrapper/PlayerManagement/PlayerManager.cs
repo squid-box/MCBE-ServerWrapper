@@ -3,10 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-
+using System.Text.Json;
 using AhlSoft.BedrockServerWrapper.Logging;
-
-using Newtonsoft.Json;
 
 /// <inheritdoc cref="IPlayerManager" />
 public class PlayerManager : IPlayerManager
@@ -102,7 +100,7 @@ public class PlayerManager : IPlayerManager
         if (File.Exists(PlayerTimeLogFile))
         {
             _log.Info("Loading player time log from file.");
-            return JsonConvert.DeserializeObject<Dictionary<string, int>>(File.ReadAllText(PlayerTimeLogFile));
+            return JsonSerializer.Deserialize(File.ReadAllText(PlayerTimeLogFile), PlayerTimeLogContext.Default.DictionaryStringInt32);
         }
 
         _log.Info("No player time log found, creating new.");
@@ -114,7 +112,7 @@ public class PlayerManager : IPlayerManager
         if (File.Exists(PlayerSeenLogFile))
         {
             _log.Info("Loading player seen log from file.");
-            return JsonConvert.DeserializeObject<Dictionary<string, DateTime>>(File.ReadAllText(PlayerSeenLogFile));
+            return JsonSerializer.Deserialize(File.ReadAllText(PlayerSeenLogFile), PlayerSeenLogContext.Default.DictionaryStringDateTime);
         }
 
         _log.Info("No player seen log found, creating new.");
@@ -123,11 +121,11 @@ public class PlayerManager : IPlayerManager
 
     private void SaveTimeLog()
     {
-        File.WriteAllText(PlayerTimeLogFile, JsonConvert.SerializeObject(_timeLog, Formatting.Indented));
+        File.WriteAllText(PlayerTimeLogFile, JsonSerializer.Serialize(_timeLog, PlayerTimeLogContext.Default.DictionaryStringInt32));
     }
 
     private void SaveSeenLog()
     {
-        File.WriteAllText(PlayerSeenLogFile, JsonConvert.SerializeObject(_lastSeenLog, Formatting.Indented));
+        File.WriteAllText(PlayerSeenLogFile, JsonSerializer.Serialize(_lastSeenLog, PlayerSeenLogContext.Default.DictionaryStringDateTime));
     }
 }

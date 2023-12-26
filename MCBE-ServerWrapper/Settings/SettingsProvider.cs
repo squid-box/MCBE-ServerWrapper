@@ -2,8 +2,8 @@
 
 using System;
 using System.IO;
-
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 /// <inheritdoc cref="ISettingsProvider" />
 public class SettingsProvider : ISettingsProvider, IDisposable
@@ -16,29 +16,12 @@ public class SettingsProvider : ISettingsProvider, IDisposable
     private string _backupFolder;
     private int _numberOfBackups;
     private const string SettingsFile = "mcbsw.conf";
+    
+    /// <inheritdoc />
+    public event EventHandler AutomaticBackupEnabledChanged;
 
-    private SettingsProvider()
-    {
-        // Empty constructor to block public constructor.
-    }
-
-    /// <summary>
-    /// Load settings from file, or create a new file.
-    /// </summary>
-    /// <returns>A SettingsProvider object.</returns>
-    public static ISettingsProvider Load()
-    {
-        if (File.Exists(SettingsFile))
-        {
-            return JsonConvert.DeserializeObject<SettingsProvider>(File.ReadAllText(SettingsFile));
-        }
-
-        ISettingsProvider newSettings = new SettingsProvider();
-        newSettings.Reset();
-        newSettings.Save();
-
-        return newSettings;
-    }
+    /// <inheritdoc />
+    public event EventHandler AutomaticBackupFrequencyChanged;
 
     /// <inheritdoc />
     public bool AutomaticBackupEnabled
@@ -56,9 +39,6 @@ public class SettingsProvider : ISettingsProvider, IDisposable
     }
 
     /// <inheritdoc />
-    public event EventHandler AutomaticBackupEnabledChanged;
-
-    /// <inheritdoc />
     public int AutomaticBackupFrequency
     {
         get => _automaticBackupFrequency;
@@ -72,9 +52,6 @@ public class SettingsProvider : ISettingsProvider, IDisposable
             }
         }
     }
-
-    /// <inheritdoc />
-    public event EventHandler AutomaticBackupFrequencyChanged;
 
     /// <inheritdoc />
     public string BackupFolder
@@ -130,7 +107,25 @@ public class SettingsProvider : ISettingsProvider, IDisposable
     /// <inheritdoc />
     public void Save()
     {
-        File.WriteAllText(SettingsFile, JsonConvert.SerializeObject(this, Formatting.Indented));
+        File.WriteAllText(SettingsFile, JsonSerializer.Serialize(this, SettingsProviderContext.Default.SettingsProvider));
+    }
+
+    /// <summary>
+    /// Load settings from file, or create a new file.
+    /// </summary>
+    /// <returns>A SettingsProvider object.</returns>
+    public static ISettingsProvider Load()
+    {
+        if (File.Exists(SettingsFile))
+        {
+            return JsonSerializer.Deserialize(File.ReadAllText(SettingsFile), SettingsProviderContext.Default.SettingsProvider);
+        }
+
+        ISettingsProvider newSettings = new SettingsProvider();
+        newSettings.Reset();
+        newSettings.Save();
+
+        return newSettings;
     }
 
     /// <inheritdoc />

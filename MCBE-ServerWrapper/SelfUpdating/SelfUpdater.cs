@@ -1,14 +1,10 @@
-﻿namespace AhlSoft.BedrockServerWrapper;
+﻿namespace AhlSoft.BedrockServerWrapper.SelfUpdating;
 
 using System;
-using System.IO.Compression;
-using System.IO;
 using System.Net.Http;
-
+using System.Text.Json;
 using AhlSoft.BedrockServerWrapper.Logging;
 using System.Text.RegularExpressions;
-using System.Threading;
-using Newtonsoft.Json.Linq;
 
 /// <summary>
 /// Provides logic to find info about remote versions.
@@ -18,6 +14,11 @@ public class SelfUpdater
     private readonly ILog _log;
     private readonly HttpClient _httpClient;
 
+    /// <summary>
+    /// Creates a new <see cref="SelfUpdater" />.
+    /// </summary>
+    /// <param name="log">The log.</param>
+    /// <param name="httpClient">The HTTP client.</param>
     public SelfUpdater(ILog log, HttpClient httpClient)
     {
         _log = log;
@@ -44,13 +45,12 @@ public class SelfUpdater
 
         try
         {
-            dynamic release = JObject.Parse(latestReleaseJson);
+            var release = JsonSerializer.Deserialize(latestReleaseJson, GitHubReleaseMetaDataContext.Default.GitHubReleaseMetaData);
 
-            string tag = release.tag_name.ToString();
-            var remoteVersion = Version.Parse(tag.Substring(1));
-
-            if (remoteVersion != null)
+            if (!string.IsNullOrEmpty(release?.TagName))
             {
+                var remoteVersion = Version.Parse(release.TagName[1..]);
+
                 return (remoteVersion > Version.Parse(Utils.ProgramVersion), remoteVersion, match.Groups[1].Value);
             }
 
@@ -60,6 +60,7 @@ public class SelfUpdater
         {
             _log.Warning("Could not find the latest release of MCBSW.");
             _log.Warning($"{exception.GetType()} : {exception.Message}", logToConsole: false);
+
             return (false, null, null);
         }
     }
