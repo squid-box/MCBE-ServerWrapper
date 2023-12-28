@@ -27,32 +27,30 @@ public class PlayerManager : IPlayerManager
     /// <summary>
     /// Collection of currently online <see cref="Player"/> and when they logged in.
     /// </summary>
-    private readonly Dictionary<Player, DateTime> _online;
+    private readonly IDictionary<Player, DateTime> _online;
 
-    private readonly Dictionary<string, DateTime> _lastSeenLog;
+    private readonly IDictionary<string, DateTime> _lastSeenLog;
 
     /// <summary>
     /// Log of how many minutes <see cref="Player"/>s have played so far.
     /// </summary>
-    private readonly Dictionary<string, int> _timeLog;
+    private readonly IDictionary<string, int> _timeLog;
 
     /// <inheritdoc />
     public int GetPlayedMinutes(Player player)
     {
-        if (!_timeLog.ContainsKey(player.Name))
+        if (!_timeLog.ContainsKey(player.Xuid))
         {
             return -1;
         }
 
-        return _timeLog[player.Name];
+        return _timeLog[player.Xuid];
     }
 
     /// <inheritdoc />
     public DateTime GetLastSeen(Player player)
     {
-        return !_lastSeenLog.ContainsKey(player.Name) ? 
-            DateTime.MinValue : 
-            _lastSeenLog[player.Name];
+        return _lastSeenLog.TryGetValue(player.Xuid, out var timestamp) ? timestamp : DateTime.MinValue;
     }
 
     /// <inheritdoc />
@@ -64,14 +62,14 @@ public class PlayerManager : IPlayerManager
             return;
         }
 
-        if (!_timeLog.ContainsKey(player.Name))
+        if (!_timeLog.ContainsKey(player.Xuid))
         {
-            _timeLog.Add(player.Name, 0);
+            _timeLog.Add(player.Xuid, 0);
         }
 
-        _lastSeenLog[player.Name] = DateTime.Now;
+        _lastSeenLog[player.Xuid] = DateTime.Now;
 
-        _timeLog[player.Name] += Convert.ToInt32(Math.Ceiling((DateTime.UtcNow - _online[player]).TotalMinutes));
+        _timeLog[player.Xuid] += Convert.ToInt32(Math.Ceiling((DateTime.UtcNow - _online[player]).TotalMinutes));
         _online.Remove(player);
 
         SaveTimeLog();
@@ -104,7 +102,7 @@ public class PlayerManager : IPlayerManager
         }
 
         _log.Info("No player time log found, creating new.");
-        return new Dictionary<string, int>();
+        return new();
     }
 
     private Dictionary<string, DateTime> LoadSeenLog()
@@ -116,7 +114,7 @@ public class PlayerManager : IPlayerManager
         }
 
         _log.Info("No player seen log found, creating new.");
-        return new Dictionary<string, DateTime>();
+        return new();
     }
 
     private void SaveTimeLog()

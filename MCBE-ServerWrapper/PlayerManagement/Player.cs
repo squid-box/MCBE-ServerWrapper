@@ -34,7 +34,7 @@ public class Player
     /// <returns>A unique hash code for this <see cref="Player"/>.</returns>
     public override int GetHashCode()
     {
-        return (Name+Xuid).GetHashCode();
+        return Xuid.GetHashCode();
     }
 
     /// <summary>
@@ -44,14 +44,9 @@ public class Player
     /// <returns>True if equal, otherwise false.</returns>
     public override bool Equals(object obj)
     {
-        if (obj == null)
-        {
-            return false;
-        }
-
         if (obj is Player other)
         {
-	            return Name.Equals(other.Name, StringComparison.Ordinal) && Xuid.Equals(other.Xuid, StringComparison.Ordinal);
+            return string.Equals(Xuid, other.Xuid, StringComparison.OrdinalIgnoreCase);
         }
 
         return false;
@@ -74,7 +69,7 @@ public class Player
     /// <returns>True if <see cref="Player"/>s are equal, otherwise false.</returns>
     public static bool operator ==(Player player1, Player player2)
     {
-	        return !(player1 == null) && player1.Equals(player2);
+	    return player1 is not null && player1.Equals(player2);
     }
 
     /// <summary>

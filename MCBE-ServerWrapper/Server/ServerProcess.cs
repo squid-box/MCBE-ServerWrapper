@@ -249,7 +249,7 @@ public class ServerProcess : IServerProcess
 
         if (e.Data.Contains("Player connected"))
         {
-            var playerData = Regex.Match(e.Data, @".* Player connected: (.*), xuid: (.*)");
+            var playerData = Regex.Match(e.Data, @".* Player connected: (.*), xuid: (\d+)");
             var player = new Player(playerData.Groups[1].Value, playerData.Groups[2].Value);
             _playerManager.PlayerJoined(player);
 
@@ -268,7 +268,7 @@ public class ServerProcess : IServerProcess
 
         if (e.Data.Contains("Player disconnected"))
         {
-            var playerData = Regex.Match(e.Data, @".* Player disconnected: (.*), xuid: (.*)");
+            var playerData = Regex.Match(e.Data, @".* Player disconnected: (.*), xuid: (\d+)");
             var player = new Player(playerData.Groups[1].Value, playerData.Groups[2].Value);
             _playerManager.PlayerLeft(player);
 
