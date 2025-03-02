@@ -123,7 +123,8 @@ public class ServerDownloader
         {
             Path.Combine(targetDirectory, "server.properties"),
             Path.Combine(targetDirectory, "permissions.json"),
-            Path.Combine(targetDirectory, "whitelist.json")
+            Path.Combine(targetDirectory, "whitelist.json"),
+            Path.Combine(targetDirectory, "allowlist.json"),
         };
 
         try
