@@ -15,10 +15,10 @@ using AhlSoft.BedrockServerWrapper.Logging;
 /// </summary>
 public class ServerDownloader
 {
-    private const string WindowsDownloadRegexPattern = @"(https://www.minecraft.net/bedrockdedicatedserver/bin-win/bedrock-server-(.*).zip)";
-    private const string LinuxDownloadRegexPattern = @"(https://www.minecraft.net/bedrockdedicatedserver/bin-linux/bedrock-server-(.*).zip)";
+    private const string WindowsDownloadRegexPattern = @"(?<link>https://www.minecraft.net/bedrockdedicatedserver/bin-win/bedrock-server-(?<version>[\d\.]*).zip)";
+    private const string LinuxDownloadRegexPattern = @"(?<link>https://www.minecraft.net/bedrockdedicatedserver/bin-linux/bedrock-server-(?<version>[\d\.]*).zip)";
 
-    private readonly Uri _serverDownloadPage = new("https://www.minecraft.net/en-us/download/server/bedrock");
+    private readonly Uri _serverDownloadPage = new("https://net-secondary.web.minecraft-services.net/api/v1.0/download/links");
     private readonly ILog _log;
     private readonly HttpClient _httpClient;
     
@@ -106,7 +106,7 @@ public class ServerDownloader
         {
             var downloadPageSource = _httpClient.GetStringAsync(_serverDownloadPage).Result;
 
-            return new Version(Regex.Match(downloadPageSource, regexPattern).Groups[2].Value);
+            return new Version(Regex.Match(downloadPageSource, regexPattern).Groups["version"].Value);
         }
         catch (Exception exception)
         {
@@ -212,6 +212,6 @@ public class ServerDownloader
     {
         var downloadPageSource = _httpClient.GetStringAsync(_serverDownloadPage).Result;
 
-        return new Uri(Regex.Match(downloadPageSource, regexPattern).Groups[1].Value);
+        return new Uri(Regex.Match(downloadPageSource, regexPattern).Groups["link"].Value);
     }
 }
